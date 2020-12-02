@@ -155,3 +155,36 @@ GLuint loadShaders(const std::string vertexShaderFile, const std::string fragmen
 
 	return programID;
 }
+
+void init(void) {
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(cube), cube, GL_STATIC_DRAW);
+	// Attribute for vertex coordinates
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+	// Attribute for vertex normals
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	// Attribute for texture mapping
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+	program = loadShaders("vertexShader.glsl", "fragmentShader.glsl");
+	// Activate the shader program
+	glUseProgram(program);
+
+	glEnable(GL_DEPTH_TEST);			// enable depth buffering
+	glClearColor(0.0, 0.0, 0.0, 1.0);	// set background color
+										// Red, Green, Blue, Alpha
+
+	// fov, aspect, near, far
+	//proj = glm::perspective(glm::radians(40.0f), 1.0f, 0.1f, 50.0f);
+	unsigned int projLoc = glGetUniformLocation(program, "proj");
+	//glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+	//Load texture to "texture1"
+	//texture1 = loadTexture();
+}
