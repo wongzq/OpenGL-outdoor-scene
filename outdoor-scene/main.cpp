@@ -85,7 +85,7 @@ void drawWater(void);
 void display(void);
 void update(int);
 void specKey(int, int, int);
-void main(int, char**);
+int main(int, char**);
 
 // --------------------------------------------------------------------------------
 // Functions
@@ -436,7 +436,7 @@ void init(void) {
 }
 
 // function to draw ground
-void drawGround() {
+void drawGround(void) {
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
 	obj = 1;
 	glUniform1i(objLoc, obj);
@@ -448,4 +448,144 @@ void drawGround() {
 	glUniform1i(ourTextureLoc, 0);
 
 	glDrawArrays(GL_QUADS, 0, VERTICES);
+}
+
+// function to draw water
+void drawWater(void) {
+	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	obj = 2;
+	glUniform1i(objLoc, obj);
+
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.3, 0.3, 0.8)));
+
+	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
+	glUniform1i(ourTextureLoc, 1);
+
+	glDrawArrays(GL_QUADS, 0, 4);
+}
+
+// function to display
+void display(void) {
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	// view martrix - glm::lookAt(camera position, direction, up vector)
+	view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(dirX, dirY, dirZ), glm::vec3(0.0, 1.0, 0.0));
+	unsigned int viewLoc = glGetUniformLocation(program, "view");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+	// pass camera position to fragment shader for light calculation
+	unsigned int viewPosLoc = glGetUniformLocation(program, "viewPos");
+	glUniform3fv(viewPosLoc, 1, glm::value_ptr(glm::vec3(camX, camY, camZ)));
+	drawWater();
+	drawGround();
+	glutSwapBuffers();
+}
+
+// function to update
+void update(int _) {
+	// alternate water texture coordinate to create the illusion of motion
+	if (!odd) {
+		water[6] = 0.0f;
+		water[7] = 0.0f;
+		water[14] = 0.0f;
+		water[15] = 1.0f;
+		water[22] = 1.0f;
+		water[23] = 1.0f;
+		water[30] = 1.0f;
+		water[31] = 0.0f;
+	}
+	else {
+		water[6] = 0.0f;
+		water[7] = 1.0f;
+		water[14] = 0.0f;
+		water[15] = 0.0f;
+		water[22] = 1.0f;
+		water[23] = 0.0f;
+		water[30] = 1.0f;
+		water[31] = 1.0f;
+	}
+
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(water), water);
+	odd = !odd;
+
+	// randomize intervals between 0.6s to 1.0s
+	int timing = rand() % 400;
+	glutTimerFunc(600 + timing, update, 0);
+}
+
+// function to detect special keys
+void specKey(int key, int mouseX, int mouseY) {
+	// change camera position and ensure camera always "points" toward the front
+	switch (key) {
+	case GLUT_KEY_LEFT:
+		if (camX >= -WORLD_SIZE / 2.0f) {
+			camX -= 0.5;
+			dirX -= 0.5;
+		}
+		break;
+
+	case GLUT_KEY_RIGHT:
+		if (camX <= WORLD_SIZE / 2.0f) {
+			camX += 0.5;
+			dirX += 0.5;
+		}
+		break;
+
+	case GLUT_KEY_UP:
+		if (camZ >= -WORLD_SIZE / 2.0f) {
+			camZ -= 0.5;
+			dirZ -= 0.5;
+		}
+		break;
+
+	case GLUT_KEY_DOWN:
+		if (camZ <= WORLD_SIZE / 2.0f) {
+			camZ += 0.5;
+			dirZ += 0.5;
+		}
+		break;
+
+	case GLUT_KEY_PAGE_UP:
+		if (camY <= 20.0) {
+			camY += 0.5;
+			dirY += 0.5;
+		}
+		break;
+
+	case GLUT_KEY_PAGE_DOWN:
+		if (camY >= 0.0) {
+			camY -= 0.5;
+			dirY -= 0.5;
+		}
+		break;
+
+	case GLUT_KEY_F4:
+		exit(0);
+
+	default:
+		break;
+	}
+
+}
+
+// function to run main program
+int main(int argc, char** argv) {
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+	glutInitWindowSize(1280, 720);
+	glutInitWindowPosition(0, 0);
+	glutCreateWindow("Outdoor Scene");
+	glewInit();
+
+	init();
+	
+	glutDisplayFunc(display);
+	glutIdleFunc(display);
+	glutSpecialFunc(specKey);
+	glutTimerFunc(500, update, 0);
+	glutMainLoop();
+
+	return 0;
 }
