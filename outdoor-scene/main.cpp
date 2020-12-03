@@ -13,11 +13,11 @@
 #include "stb_image.h"
 
 // global constants
-#define WORLD_SIZE 33
+#define WORLD_SIZE 65
 #define MAX_HEIGHT 5.0
 #define ROUGHNESS 1.5
 #define VAO_SIZE 1
-#define VBO_SIZE 1
+#define VBO_SIZE 2
 #define TEXTURES 2
 
 #pragma warning(disable:4996)
@@ -57,7 +57,7 @@ glm::mat4 proj;
 
 // camera position and facing direction
 GLfloat camX = 0.0f;
-GLfloat camY = MAX_HEIGHT * 2.0f;
+GLfloat camY = MAX_HEIGHT * 1.0f;
 GLfloat camZ = WORLD_SIZE / 2.0f;
 GLfloat dirX = 0.0f;
 GLfloat dirY = MAX_HEIGHT / 2.0f;
@@ -76,7 +76,7 @@ bool odd = false;
 
 GLuint loadShaders(const std::string, const std::string);
 unsigned int loadTexture(unsigned int ID, char* file);
-float randomize(float);
+float randomize(double);
 glm::vec3 calculateNormal(glm::vec3, glm::vec3, glm::vec3);
 void generateTerrain(float, float, float, float);
 void init(void);
@@ -92,119 +92,88 @@ int main(int, char**);
 // --------------------------------------------------------------------------------
 
 // function to load shaders
-GLuint loadShaders(const std::string vertexShaderFile, const std::string fragmentShaderFile)
-{
-	GLint status;	// for checking compile and linking status
+GLuint loadShaders(const std::string vShaderFile, const std::string fShaderFile) {
+	GLint status;	// to check compile and linking status
 
-					// load vertex shader code from file
-	std::string vertexShaderCode;	// to store shader code
-	std::ifstream vertexShaderStream(vertexShaderFile, std::ios::in);	// open file stream
-
-															// check whether file stream was successfully opened
-	if (vertexShaderStream.is_open())
-	{
+	// VERTEX SHADER
+	// load vertex shader code from file
+	std::string vShaderCodeStr;
+	std::ifstream vShaderStream(vShaderFile, std::ios::in);
+	if (vShaderStream.is_open()) {
 		// read from stream line by line and append it to shader code
 		std::string line = "";
-		while (std::getline(vertexShaderStream, line))
-			vertexShaderCode += line + "\n";
-
-		vertexShaderStream.close();		// no longer need file stream
+		while (std::getline(vShaderStream, line))
+			vShaderCodeStr += line + "\n";
+		vShaderStream.close();
 	}
-	else
-	{
+	else {
 		// output error message and exit
-		std::cout << "Failed to open vertex shader file - " << vertexShaderFile << std::endl;
+		std::cout << "Failed to open vertex shader file - " << vShaderFile << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
+	// FRAGMENT SHADER
 	// load fragment shader code from file
-	std::string fragmentShaderCode;	// to store shader code
-	std::ifstream fragmentShaderStream(fragmentShaderFile, std::ios::in);	// open file stream
-
-																// check whether file stream was successfully opened
-	if (fragmentShaderStream.is_open())
-	{
+	std::string fShaderCodeStr;
+	std::ifstream fShaderStream(fShaderFile, std::ios::in);
+	if (fShaderStream.is_open()) {
 		// read from stream line by line and append it to shader code
 		std::string line = "";
-		while (std::getline(fragmentShaderStream, line))
-			fragmentShaderCode += line + "\n";
-
-		fragmentShaderStream.close();	// no longer need file stream
+		while (std::getline(fShaderStream, line))
+			fShaderCodeStr += line + "\n";
+		fShaderStream.close();
 	}
-	else
-	{
+	else {
 		// output error message and exit
-		std::cout << "Failed to open fragment shader file - " << fragmentShaderFile << std::endl;
+		std::cout << "Failed to open fragment shader file - " << fShaderFile << std::endl;
 		exit(EXIT_FAILURE);
 	}
-
-	// create shader objects
-	GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-	GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-	// provide source code for shaders
-	const GLchar* vShaderCode = vertexShaderCode.c_str();
-	const GLchar* fShaderCode = fragmentShaderCode.c_str();
-	glShaderSource(vertexShaderID, 1, &vShaderCode, NULL);
-	glShaderSource(fragmentShaderID, 1, &fShaderCode, NULL);
 
 	// compile vertex shader
-	glCompileShader(vertexShaderID);
+	GLuint vShaderID = glCreateShader(GL_VERTEX_SHADER);
+	const GLchar* vShaderCode = vShaderCodeStr.c_str();
+	glShaderSource(vShaderID, 1, &vShaderCode, NULL);
 
-	// check compile status
 	status = GL_FALSE;
-	glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &status);
+	glCompileShader(vShaderID);
+	glGetShaderiv(vShaderID, GL_COMPILE_STATUS, &status);
 
-	if (status == GL_FALSE)
-	{
-		// output error message
-		std::cout << "Failed to compile vertex shader - " << vertexShaderFile << std::endl;
-
-		// output error information
+	if (status == GL_FALSE) {
+		std::cout << "Failed to compile vertex shader - " << vShaderFile << std::endl;
 		int infoLogLength;
-		glGetShaderiv(fragmentShaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
-		char* errorMessage = new char[infoLogLength + 1];
-		glGetShaderInfoLog(vertexShaderID, infoLogLength, NULL, errorMessage);
-		std::cout << errorMessage << std::endl;
-		delete[] errorMessage;
-
+		glGetShaderiv(vShaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
+		char* errorMsg = new char[static_cast<__int64>(infoLogLength) + 1];
+		glGetShaderInfoLog(vShaderID, infoLogLength, NULL, errorMsg);
+		std::cout << errorMsg << std::endl;
+		delete[] errorMsg;
 		exit(EXIT_FAILURE);
 	}
 
 	// compile fragment shader
-	glCompileShader(fragmentShaderID);
+	GLuint fShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+	const GLchar* fShaderCode = fShaderCodeStr.c_str();
+	glShaderSource(fShaderID, 1, &fShaderCode, NULL);
 
-	// check compile status
 	status = GL_FALSE;
-	glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &status);
+	glCompileShader(fShaderID);
+	glGetShaderiv(fShaderID, GL_COMPILE_STATUS, &status);
 
-	if (status == GL_FALSE)
-	{
-		// output error message
-		std::cout << "Failed to compile fragment shader - " << fragmentShaderFile << std::endl;
-
-		// output error information
+	if (status == GL_FALSE) {
+		std::cout << "Failed to compile fragment shader - " << fShaderFile << std::endl;
 		int infoLogLength;
-		glGetShaderiv(fragmentShaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
-		char* errorMessage = new char[infoLogLength + 1];
-		glGetShaderInfoLog(fragmentShaderID, infoLogLength, NULL, errorMessage);
-		std::cout << errorMessage << std::endl;
-		delete[] errorMessage;
-
+		glGetShaderiv(fShaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
+		char* errorMsg = new char[static_cast<__int64>(infoLogLength) + 1];
+		glGetShaderInfoLog(fShaderID, infoLogLength, NULL, errorMsg);
+		std::cout << errorMsg << std::endl;
+		delete[] errorMsg;
 		exit(EXIT_FAILURE);
 	}
 
 	// create program
 	GLuint programID = glCreateProgram();
-
-	// attach shaders to the program object
-	glAttachShader(programID, vertexShaderID);
-	glAttachShader(programID, fragmentShaderID);
-
-	// flag shaders for deletion (will not be deleted until detached from program)
-	glDeleteShader(vertexShaderID);
-	glDeleteShader(fragmentShaderID);
-
+	// attach shaders to program object
+	glAttachShader(programID, vShaderID);
+	glAttachShader(programID, fShaderID);
 	// link program object
 	glLinkProgram(programID);
 
@@ -212,19 +181,14 @@ GLuint loadShaders(const std::string vertexShaderFile, const std::string fragmen
 	status = GL_FALSE;
 	glGetProgramiv(programID, GL_LINK_STATUS, &status);
 
-	if (status == GL_FALSE)
-	{
-		// output error message
+	if (status == GL_FALSE) {
 		std::cout << "Failed to link program object." << std::endl;
-
-		// output error information
 		int infoLogLength;
 		glGetShaderiv(programID, GL_INFO_LOG_LENGTH, &infoLogLength);
-		char* errorMessage = new char[infoLogLength + 1];
-		glGetShaderInfoLog(programID, infoLogLength, NULL, errorMessage);
-		std::cout << errorMessage << std::endl;
-		delete[] errorMessage;
-
+		char* errorMsg = new char[static_cast<__int64>(infoLogLength) + 1];
+		glGetShaderInfoLog(programID, infoLogLength, NULL, errorMsg);
+		std::cout << errorMsg << std::endl;
+		delete[] errorMsg;
 		exit(EXIT_FAILURE);
 	}
 
@@ -232,7 +196,7 @@ GLuint loadShaders(const std::string vertexShaderFile, const std::string fragmen
 }
 
 // function to load textures
-unsigned int loadTexture(unsigned int ID, const char* file) {
+unsigned int loadTexture(unsigned int ID, char* file) {
 	unsigned int textureID;
 	// generate 1 texture with ID of "textureID"
 	glGenTextures(1, &textureID);
@@ -261,9 +225,9 @@ unsigned int loadTexture(unsigned int ID, const char* file) {
 }
 
 // function to generate a random value between [-d, +d]
-float randomize(float d) {
+float randomize(double d) {
 	float randVal = ((float)rand()) / (float)RAND_MAX;
-	return (randVal * 2 * d) - d;
+	return (randVal * 2 * (float)d) - (float)d;
 }
 
 // function to calculate normal vector based on vector cross-product
@@ -275,9 +239,10 @@ glm::vec3 calculateNormal(glm::vec3 A, glm::vec3 B, glm::vec3 C) {
 void generateTerrain(float UL, float LL, float LR, float UR) {
 	int i = WORLD_SIZE;
 	int midX, midZ;
-	float d = MAX_HEIGHT;
+	double d = MAX_HEIGHT;
 	// initial height at the 4 corners of the terrain
-	const int first = 0, last = WORLD_SIZE - 1;
+	const int first = 0;
+	const int last = WORLD_SIZE - 1;
 	heightField[first][first] = UL;
 	heightField[first][last] = LL;
 	heightField[last][last] = LR;
@@ -294,18 +259,15 @@ void generateTerrain(float UL, float LL, float LR, float UR) {
 				const float x0z0 = heightField[x][z];
 				const float xiz0 = x + i < WORLD_SIZE ? heightField[x + i][z] : x0z0;
 				const float x0zi = z + i < WORLD_SIZE ? heightField[x][z + i] : x0z0;
-				const float xizi = x + i < WORLD_SIZE&& z + i < WORLD_SIZE ? heightField[x + i][z + i] : x0z0;
-				const float xMidzMid = midX < WORLD_SIZE&& midZ < WORLD_SIZE ? heightField[midX][midZ] : x0z0;
-
-				heightField[midX][midZ] = (x0z0 + x0zi + xizi + xiz0) / 4;
+				const float xizi = (x + i < WORLD_SIZE) && (z + i < WORLD_SIZE) ? heightField[x + i][z + i] : x0z0;
+				const float xMidzMid = (x0z0 + x0zi + xizi + xiz0) / 4 + randomize(d);
 
 				// diamond steps
+				heightField[midX][midZ] = xMidzMid;
 				heightField[x][midZ] = (x0z0 + x0zi + xMidzMid) / 3 + randomize(d);
 				heightField[midX][z] = (x0z0 + xiz0 + xMidzMid) / 3 + randomize(d);
-				if (x + i < WORLD_SIZE)
-					heightField[x + i][midZ] = (xizi + xiz0 + xMidzMid) / 3 + randomize(d);
-				if (z + i < WORLD_SIZE)
-					heightField[midX][z + i] = (x0zi + xizi + xMidzMid) / 3 + randomize(d);
+				if (x + i < WORLD_SIZE) heightField[x + i][midZ] = (float)((xizi + xiz0 + xMidzMid) / 3 + randomize(d));
+				if (z + i < WORLD_SIZE) heightField[midX][z + i] = (float)((x0zi + xizi + xMidzMid) / 3 + randomize(d));
 			}
 		}
 		i /= 2;
@@ -314,12 +276,9 @@ void generateTerrain(float UL, float LL, float LR, float UR) {
 
 	// calculate normal vector
 	const float halfSize = (WORLD_SIZE - 1) / 2.0f;
-	i = 0;
-	for (int x = 0; x < WORLD_SIZE; x++) {
-		for (int z = 0; z < WORLD_SIZE; z++) {
+	for (int x = 0; x < WORLD_SIZE; x++)
+		for (int z = 0; z < WORLD_SIZE; z++)
 			vertexCoord[x][z] = glm::vec3(x - halfSize, heightField[x][z], z - halfSize);
-		}
-	}
 
 	// calculate normal vector for each vertex of terrain
 	for (int x = 0; x < WORLD_SIZE; x++) {
@@ -353,8 +312,7 @@ void generateTerrain(float UL, float LL, float LR, float UR) {
 					calculateNormal(x0z0, xMz0, x0zP) +
 					calculateNormal(x0z0, x0zP, xPz0) +
 					calculateNormal(x0z0, xPz0, x0zM) +
-					calculateNormal(x0z0, x0zM, xMz0))
-					/ 4.0f);
+					calculateNormal(x0z0, x0zM, xMz0)) / 4.0f);
 		}
 	}
 
@@ -383,7 +341,7 @@ void generateTerrain(float UL, float LL, float LR, float UR) {
 
 // function to initialize the program
 void init(void) {
-	generateTerrain(6.9, 3.1, 2.5, 3.0);
+	generateTerrain(5.0f, 1.0f, -5.0f, 5.0f);
 
 	glGenVertexArrays(VAO_SIZE, VAO);
 	glBindVertexArray(VAO[0]);
@@ -416,7 +374,7 @@ void init(void) {
 	glUseProgram(program);
 
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(0.33, 0.33, 0.33, 1.0);
+	glClearColor((GLclampf)0.33, (GLclampf)0.33, (GLclampf)0.33, (GLclampf)1.0);
 
 	// projection matrix (fov, aspect, near, far)
 	proj = glm::perspective(glm::radians(45.0f), 1.8f, 0.1f, 200.0f);
@@ -429,8 +387,10 @@ void init(void) {
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	// texture
-	textureID[0] = loadTexture(0, "textures/grass.jpg");
-	textureID[1] = loadTexture(1, "textures/water.jpg");
+	char tex1[50] = "textures/grass.jpg";
+	char tex2[50] = "textures/water.jpg";
+	textureID[0] = loadTexture(0, tex1);
+	textureID[1] = loadTexture(1, tex2);
 	srand(0);
 	glutFullScreen();
 }
@@ -520,21 +480,21 @@ void specKey(int key, int mouseX, int mouseY) {
 	// change camera position and ensure camera always "points" toward the front
 	switch (key) {
 	case GLUT_KEY_LEFT:
-		if (camX >= -WORLD_SIZE / 2.0f) {
+		if (camX >= -WORLD_SIZE / 3.0f) {
 			camX -= 0.5;
 			dirX -= 0.5;
 		}
 		break;
 
 	case GLUT_KEY_RIGHT:
-		if (camX <= WORLD_SIZE / 2.0f) {
+		if (camX <= WORLD_SIZE / 3.0f) {
 			camX += 0.5;
 			dirX += 0.5;
 		}
 		break;
 
 	case GLUT_KEY_UP:
-		if (camZ >= -WORLD_SIZE / 2.0f) {
+		if (camZ >= 0.0f) {
 			camZ -= 0.5;
 			dirZ -= 0.5;
 		}
@@ -555,7 +515,7 @@ void specKey(int key, int mouseX, int mouseY) {
 		break;
 
 	case GLUT_KEY_PAGE_DOWN:
-		if (camY >= 0.0) {
+		if (camY >= 2.0) {
 			camY -= 0.5;
 			dirY -= 0.5;
 		}
@@ -580,7 +540,7 @@ int main(int argc, char** argv) {
 	glewInit();
 
 	init();
-	
+
 	glutDisplayFunc(display);
 	glutIdleFunc(display);
 	glutSpecialFunc(specKey);

@@ -14,9 +14,7 @@ struct Light {
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
-};
-
-Light light1;
+} light1;
 
 vec3 calcLightDir (Light light, vec3 normal, vec3 viewDir) {
 	// ambient light component
