@@ -76,10 +76,16 @@ bool odd = false;
 
 GLuint loadShaders(const std::string, const std::string);
 unsigned int loadTexture(unsigned int ID, char* file);
-void init(void);
 float randomize(float);
 glm::vec3 calculateNormal(glm::vec3, glm::vec3, glm::vec3);
 void generateTerrain(float, float, float, float);
+void init(void);
+void drawGround(void);
+void drawWater(void);
+void display(void);
+void update(int);
+void specKey(int, int, int);
+void main(int, char**);
 
 // --------------------------------------------------------------------------------
 // Functions
@@ -295,9 +301,9 @@ void generateTerrain(float UL, float LL, float LR, float UR) {
 
 				// diamond steps
 				heightField[x][midZ] = (x0z0 + x0zi + xMidzMid) / 3 + randomize(d);
+				heightField[midX][z] = (x0z0 + xiz0 + xMidzMid) / 3 + randomize(d);
 				if (x + i < WORLD_SIZE)
 					heightField[x + i][midZ] = (xizi + xiz0 + xMidzMid) / 3 + randomize(d);
-				heightField[midX][z] = (x0z0 + xiz0 + xMidzMid) / 3 + randomize(d);
 				if (z + i < WORLD_SIZE)
 					heightField[midX][z + i] = (x0zi + xizi + xMidzMid) / 3 + randomize(d);
 			}
