@@ -34,12 +34,12 @@ GLuint program;
 // terrain
 struct terrain { glm::vec3 vertex; glm::vec3 normal; glm::vec2 tex_coord; };
 const int QUADS_PER_DIMENSION = WORLD_SIZE - 1;
-const int NUM_OF_VERTICES = QUADS_PER_DIMENSION * QUADS_PER_DIMENSION * 4;
+const int VERTICES = QUADS_PER_DIMENSION * QUADS_PER_DIMENSION * 4;
 
 float heightField[WORLD_SIZE][WORLD_SIZE];
 glm::vec3 vertexCoord[WORLD_SIZE][WORLD_SIZE];
 glm::vec3 vertexNormal[WORLD_SIZE][WORLD_SIZE];
-struct terrain ground[NUM_OF_VERTICES];
+struct terrain ground[VERTICES];
 
 // water
 // vertex coord X Y Z, normal vector X Y Z, texture coord S T)
@@ -286,18 +286,20 @@ void generateTerrain(float UL, float LL, float LR, float UR) {
 				midZ = z + i / 2;
 
 				const float x0z0 = heightField[x][z];
-				const float xiz0 = heightField[x + i][z];
-				const float x0zi = heightField[x][z + i];
-				const float xizi = heightField[x + i][z + i];
-				const float xMidzMid = heightField[midX][midZ];
+				const float xiz0 = x + i < WORLD_SIZE ? heightField[x + i][z] : x0z0;
+				const float x0zi = z + i < WORLD_SIZE ? heightField[x][z + i] : x0z0;
+				const float xizi = x + i < WORLD_SIZE&& z + i < WORLD_SIZE ? heightField[x + i][z + i] : x0z0;
+				const float xMidzMid = midX < WORLD_SIZE&& midZ < WORLD_SIZE ? heightField[midX][midZ] : x0z0;
 
 				heightField[midX][midZ] = (x0z0 + x0zi + xizi + xiz0) / 4;
 
 				// diamond steps
 				heightField[x][midZ] = (x0z0 + x0zi + xMidzMid) / 3 + randomize(d);
-				heightField[x + i][midZ] = (xizi + xiz0 + xMidzMid) / 3 + randomize(d);
+				if (x + i < WORLD_SIZE)
+					heightField[x + i][midZ] = (xizi + xiz0 + xMidzMid) / 3 + randomize(d);
 				heightField[midX][z] = (x0z0 + xiz0 + xMidzMid) / 3 + randomize(d);
-				heightField[midX][z + i] = (x0zi + xizi + xMidzMid) / 3 + randomize(d);
+				if (z + i < WORLD_SIZE)
+					heightField[midX][z + i] = (x0zi + xizi + xMidzMid) / 3 + randomize(d);
 			}
 		}
 		i /= 2;
@@ -321,8 +323,8 @@ void generateTerrain(float UL, float LL, float LR, float UR) {
 			const glm::vec3 xPz0 = vertexCoord[x + 1][z];
 			const glm::vec3 x0zP = vertexCoord[x][z + 1];
 			const glm::vec3 xPzP = vertexCoord[x + 1][z + 1];
-			const glm::vec3 xMz0 = vertexCoord[x - 1][z];
-			const glm::vec3 x0zM = vertexCoord[x][z - 1];
+			const glm::vec3 xMz0 = x - 1 >= 0 ? vertexCoord[x - 1][z] : x0z0;
+			const glm::vec3 x0zM = z - 1 >= 0 ? vertexCoord[x][z - 1] : x0z0;
 
 			vertexNormal[x][z] =
 				x == 0 && z == 0
@@ -425,4 +427,19 @@ void init(void) {
 	textureID[1] = loadTexture(1, "textures/water.jpg");
 	srand(0);
 	glutFullScreen();
+}
+
+// function to draw ground
+void drawGround() {
+	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	obj = 1;
+	glUniform1i(objLoc, obj);
+
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.8, 0.8, 0.8)));
+
+	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
+	glUniform1i(ourTextureLoc, 0);
+
+	glDrawArrays(GL_QUADS, 0, VERTICES);
 }
