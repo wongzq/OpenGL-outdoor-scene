@@ -15,16 +15,18 @@ in float sunlightEffect;
 
 void main(void) {
 	// diffuse light component calculation
-	vec3 norm = normalize(vNormal);
+	vec3 normal = normalize(vNormal);
 
 	// sun light
 	vec3 sunlightAmbient = vec3(0.3, 0.3, 0.3);
 	vec3 sunlightDirection  = normalize(sunlightPos - vPos);
-	vec3 sunlightDiffuse = max(dot(norm, sunlightDirection), 0.0) * (sunlightColor * sunlightEffect);
+	float dist = distance(sunlightPos, vPos);
+	float attenuation = 10.0 / dist;
+	vec3 sunlightDiffuse = max(dot(normal, sunlightDirection), 0.0) * (sunlightColor * sunlightEffect);
 
 	vec3 sunlight = sunlightAmbient + sunlightDiffuse;
 
-	fragColor = vec4(sunlight * vColor, 1.0);
+	fragColor = attenuation * vec4(sunlight * vColor, 1.0);
 	fragColor =
 		(textureFlag * texture(ourTexture, vTexCoord) * fragColor) +
 		((1.0 - textureFlag) * fragColor);

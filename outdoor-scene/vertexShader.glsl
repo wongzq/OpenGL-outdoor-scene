@@ -43,7 +43,7 @@ void main() {
 		vNormal = vec3(model * vec4(cNormal, 0.0));
 		vTexCoord = cTexCoord;
 		textureFlag = 1.0f;
-		sunlightEffect = 0.3;
+		sunlightEffect = 0.25;
 	}
 
 }

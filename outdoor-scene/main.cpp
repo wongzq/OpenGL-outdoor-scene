@@ -53,10 +53,10 @@ float water[] = {
 glm::vec3 skyColor = glm::vec3(3.0f, 3.0f, 3.0f);
 // vertex coord X Y Z, normal vector X Y Z
 float sky[] = {
-	-WORLD_SIZE, +WORLD_SIZE / 1.50, -WORLD_SIZE / 2,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,
-	-WORLD_SIZE, -WORLD_SIZE / 15.0, -WORLD_SIZE / 2,	0.0f, 0.0f, 1.0f,	0.0f, 1.0f,
-	+WORLD_SIZE, -WORLD_SIZE / 15.0, -WORLD_SIZE / 2,	0.0f, 0.0f, 1.0f,	1.0f, 1.0f,
-	+WORLD_SIZE, +WORLD_SIZE / 1.50, -WORLD_SIZE / 2,	0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
+	-WORLD_SIZE, +WORLD_SIZE / 1.50f, -WORLD_SIZE / 2.0f,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,
+	-WORLD_SIZE, -WORLD_SIZE / 15.0f, -WORLD_SIZE / 2.0f,	0.0f, 0.0f, 1.0f,	0.0f, 1.0f,
+	+WORLD_SIZE, -WORLD_SIZE / 15.0f, -WORLD_SIZE / 2.0f,	0.0f, 0.0f, 1.0f,	1.0f, 1.0f,
+	+WORLD_SIZE, +WORLD_SIZE / 1.50f, -WORLD_SIZE / 2.0f,	0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
 };
 
 // predefined matrix type from GLM
@@ -74,7 +74,7 @@ GLfloat dirZ = 0.0f;
 
 // light
 glm::vec3 sunlightPos = { 0, WORLD_SIZE, 0 };
-glm::vec3 sunlightColor = { 1.0f, 1.0f, 1.0f };
+glm::vec3 sunlightColor = { 10.0f, 10.0f, 10.0f };
 
 // textures
 enum Texture { WATER, GRASS, FOREST, SAND, EARTH, SKY, TEXTURES };
@@ -83,7 +83,7 @@ unsigned int groundTexture = 1;
 
 // other options variables
 int obj = 0;
-bool odd = false;
+int ripple = 0;
 bool showMenu = true;
 int curTextLoc, startTextLoc = 100;
 
@@ -100,6 +100,7 @@ void init(void);
 void drawWater(void);
 void drawGround(void);
 void drawSky(void);
+void drawLight(void);
 int textLoc(void);
 void drawText(int, int, char*);
 void drawMenu(void);
@@ -417,14 +418,6 @@ void init(void) {
 	unsigned int modelLoc = glGetUniformLocation(program, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-	// pass light position vector to fragment shader for light calculation
-	unsigned int lightPosLoc = glGetUniformLocation(program, "sunlightPos");
-	glUniform3fv(lightPosLoc, 1, glm::value_ptr(sunlightPos));
-
-	// pass light color to fragment shader for light calculation
-	unsigned int lightColorLoc = glGetUniformLocation(program, "sunlightColor");
-	glUniform3fv(lightColorLoc, 1, glm::value_ptr(sunlightColor));
-
 	// texture
 	char texWater[50] = "textures/water.jpg";
 	char texGround1[50] = "textures/grass.jpg";
@@ -439,8 +432,6 @@ void init(void) {
 	textureID[Texture::EARTH] = loadTexture(Texture::EARTH, texGround4);
 	textureID[Texture::SKY] = loadTexture(Texture::SKY, texSky);
 
-	srand(0);
-	
 	glutFullScreen();
 }
 
@@ -489,6 +480,17 @@ void drawSky(void) {
 	glDrawArrays(GL_QUADS, 0, 4);
 }
 
+// function to draw light
+void drawLight(void) {
+	// pass light position vector to fragment shader for light calculation
+	unsigned int lightPosLoc = glGetUniformLocation(program, "sunlightPos");
+	glUniform3fv(lightPosLoc, 1, glm::value_ptr(sunlightPos));
+
+	// pass light color to fragment shader for light calculation
+	unsigned int lightColorLoc = glGetUniformLocation(program, "sunlightColor");
+	glUniform3fv(lightColorLoc, 1, glm::value_ptr(sunlightColor));
+}
+
 // function to draw text
 void drawText(int x, int y, char* string) {
 	glRasterPos2d(x, y);
@@ -529,17 +531,27 @@ void display(void) {
 	// pass camera position to fragment shader for light calculation
 	unsigned int viewPosLoc = glGetUniformLocation(program, "viewPos");
 	glUniform3fv(viewPosLoc, 1, glm::value_ptr(glm::vec3(camX, camY, camZ)));
+
+	// draw background
 	drawSky();
 	drawWater();
 	drawGround();
+
+	// draw animals
+
+	// draw light
+	drawLight();
+	
+	// draw menu
 	drawMenu();
+
 	glutSwapBuffers();
 }
 
 // function to update
 void update(int _) {
 	// alternate water texture coordinate to create the illusion of motion
-	if (!odd) {
+	if (ripple == 0) {
 		water[6] = 0.0f;
 		water[7] = 0.0f;
 		water[14] = 0.0f;
@@ -549,7 +561,17 @@ void update(int _) {
 		water[30] = 1.0f;
 		water[31] = 0.0f;
 	}
-	else {
+	else if (ripple == 1) {
+		water[6] = 1.0f;
+		water[7] = 1.0f;
+		water[14] = 1.0f;
+		water[15] = 0.0f;
+		water[22] = 0.0f;
+		water[23] = 0.0f;
+		water[30] = 0.0f;
+		water[31] = 1.0f;
+	}
+	else if (ripple == 2) {
 		water[6] = 0.0f;
 		water[7] = 1.0f;
 		water[14] = 0.0f;
@@ -559,14 +581,28 @@ void update(int _) {
 		water[30] = 1.0f;
 		water[31] = 1.0f;
 	}
+	else if (ripple == 3) {
+		water[6] = 1.0f;
+		water[7] = 0.0f;
+		water[14] = 1.0f;
+		water[15] = 1.0f;
+		water[22] = 0.0f;
+		water[23] = 1.0f;
+		water[30] = 0.0f;
+		water[31] = 0.0f;
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_WATER]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(water), water);
-	odd = !odd;
+	ripple = (++ripple) % 4;
 
-	// randomize intervals between 0.6s to 1.0s
-	int timing = rand() % 400;
-	glutTimerFunc(600 + timing, update, 0);
+	// change sunlight position and color
+	float newSunlightX = sunlightPos[0] - 1.0f;
+	float ratio = 1.0f - abs(newSunlightX / WORLD_SIZE);
+	float newSunlightColor = 10.0f * ratio;
+	sunlightPos[0] = newSunlightX <= -WORLD_SIZE ? WORLD_SIZE : newSunlightX;
+	sunlightColor = glm::vec3(newSunlightColor, newSunlightColor, newSunlightColor);
+	glutTimerFunc(500, update, 0);
 }
 
 // function to detect special keys
