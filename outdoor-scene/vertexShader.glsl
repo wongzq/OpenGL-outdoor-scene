@@ -13,6 +13,7 @@ out vec3 vNormal;
 out vec3 vPos;
 out vec2 vTexCoord;
 out float textureFlag;
+out float sunlightEffect;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -25,14 +26,16 @@ void main() {
 		vPos = vec3(model * vec4(aPos, 1.0));
 		vNormal = vec3(model * vec4(aNormal, 0.0));
 		vTexCoord = aTexCoord;
-		textureFlag = 1.0f;
+		textureFlag = 1.0;
+		sunlightEffect = 1.0;
 	}
 	else if(obj == 2) {
 		gl_Position = proj * view * model * vec4(bPos, 1.0);
 		vPos = vec3(model * vec4(bPos, 1.0));
 		vNormal = vec3(model * vec4(bNormal, 0.0));
 		vTexCoord = bTexCoord;
-		textureFlag = 1.0f;
+		textureFlag = 1.0;
+		sunlightEffect = 1.0;
 	}
 	else if(obj == 3) {
 		gl_Position = proj * view * model * vec4(cPos, 1.0);
@@ -40,6 +43,7 @@ void main() {
 		vNormal = vec3(model * vec4(cNormal, 0.0));
 		vTexCoord = cTexCoord;
 		textureFlag = 1.0f;
+		sunlightEffect = 0.3;
 	}
 
 }

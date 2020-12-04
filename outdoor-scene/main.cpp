@@ -13,11 +13,10 @@
 #include "stb_image.h"
 
 // global constants
-#define WORLD_SIZE 129
+#define WORLD_SIZE 65
 #define MAX_HEIGHT 5.0
 #define ROUGHNESS 1.5
 #define VAO_SIZE 1
-#define VBO_SIZE 3
 
 #pragma warning(disable:4996)
 
@@ -26,6 +25,7 @@
 // --------------------------------------------------------------------------------
 
 // OpenGL variables
+enum Object { VBO_WATER, VBO_TERRAIN, VBO_SKY, VBO_SIZE };
 GLuint VAO[VAO_SIZE];
 GLuint VBO[VBO_SIZE];
 GLuint program;
@@ -71,6 +71,10 @@ GLfloat camZ = WORLD_SIZE / 2.0f;
 GLfloat dirX = 0.0f;
 GLfloat dirY = MAX_HEIGHT / 2.0f;
 GLfloat dirZ = 0.0f;
+
+// light
+glm::vec3 sunlightPos = { 0, WORLD_SIZE, 0 };
+glm::vec3 sunlightColor = { 1.0f, 1.0f, 1.0f };
 
 // textures
 enum Texture { WATER, GRASS, FOREST, SAND, EARTH, SKY, TEXTURES };
@@ -367,7 +371,7 @@ void init(void) {
 	glGenBuffers(VBO_SIZE, VBO);
 
 	// terrain
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_WATER]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(water), water, GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -377,7 +381,7 @@ void init(void) {
 	glEnableVertexAttribArray(2);
 
 	// water
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_TERRAIN]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(ground), ground, GL_STATIC_DRAW);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -387,7 +391,7 @@ void init(void) {
 	glEnableVertexAttribArray(5);
 
 	//// sky
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_SKY]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(sky), sky, GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -413,6 +417,14 @@ void init(void) {
 	unsigned int modelLoc = glGetUniformLocation(program, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
+	// pass light position vector to fragment shader for light calculation
+	unsigned int lightPosLoc = glGetUniformLocation(program, "sunlightPos");
+	glUniform3fv(lightPosLoc, 1, glm::value_ptr(sunlightPos));
+
+	// pass light color to fragment shader for light calculation
+	unsigned int lightColorLoc = glGetUniformLocation(program, "sunlightColor");
+	glUniform3fv(lightColorLoc, 1, glm::value_ptr(sunlightColor));
+
 	// texture
 	char texWater[50] = "textures/water.jpg";
 	char texGround1[50] = "textures/grass.jpg";
@@ -426,7 +438,9 @@ void init(void) {
 	textureID[Texture::SAND] = loadTexture(Texture::SAND, texGround3);
 	textureID[Texture::EARTH] = loadTexture(Texture::EARTH, texGround4);
 	textureID[Texture::SKY] = loadTexture(Texture::SKY, texSky);
+
 	srand(0);
+	
 	glutFullScreen();
 }
 
@@ -546,7 +560,7 @@ void update(int _) {
 		water[31] = 1.0f;
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_WATER]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(water), water);
 	odd = !odd;
 
