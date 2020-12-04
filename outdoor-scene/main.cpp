@@ -18,7 +18,6 @@
 #define ROUGHNESS 1.5
 #define VAO_SIZE 1
 #define VBO_SIZE 2
-#define TEXTURES 2
 
 #pragma warning(disable:4996)
 
@@ -64,7 +63,9 @@ GLfloat dirY = MAX_HEIGHT / 2.0f;
 GLfloat dirZ = 0.0f;
 
 // textures
+enum Texture { WATER, GRASS, FOREST, SAND, EARTH, TEXTURES };
 unsigned int textureID[TEXTURES];
+unsigned int groundTexture = 1;
 
 // other options variables
 int obj = 0;
@@ -84,7 +85,8 @@ void drawGround(void);
 void drawWater(void);
 void display(void);
 void update(int);
-void specKey(int, int, int);
+void specialKey(int, int, int);
+void keyboardKey(unsigned char, int, int);
 int main(int, char**);
 
 // --------------------------------------------------------------------------------
@@ -387,10 +389,16 @@ void init(void) {
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	// texture
-	char tex1[50] = "textures/grass.jpg";
-	char tex2[50] = "textures/water.jpg";
-	textureID[0] = loadTexture(0, tex1);
-	textureID[1] = loadTexture(1, tex2);
+	char texWater[50] = "textures/water.jpg";
+	char texGround1[50] = "textures/grass.jpg";
+	char texGround2[50] = "textures/forest.jpg";
+	char texGround3[50] = "textures/sand.jpg";
+	char texGround4[50] = "textures/earth.jpg";
+	textureID[Texture::WATER] = loadTexture(Texture::WATER, texWater);
+	textureID[Texture::GRASS] = loadTexture(Texture::GRASS, texGround1);
+	textureID[Texture::FOREST] = loadTexture(Texture::FOREST, texGround2);
+	textureID[Texture::SAND] = loadTexture(Texture::SAND, texGround3);
+	textureID[Texture::EARTH] = loadTexture(Texture::EARTH, texGround4);
 	srand(0);
 	glutFullScreen();
 }
@@ -405,7 +413,7 @@ void drawGround(void) {
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.8, 0.8, 0.8)));
 
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
-	glUniform1i(ourTextureLoc, 0);
+	glUniform1i(ourTextureLoc, groundTexture);
 
 	glDrawArrays(GL_QUADS, 0, VERTICES);
 }
@@ -420,7 +428,7 @@ void drawWater(void) {
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.3, 0.3, 0.8)));
 
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
-	glUniform1i(ourTextureLoc, 1);
+	glUniform1i(ourTextureLoc, Texture::WATER);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }
@@ -476,7 +484,7 @@ void update(int _) {
 }
 
 // function to detect special keys
-void specKey(int key, int mouseX, int mouseY) {
+void specialKey(int key, int mouseX, int mouseY) {
 	// change camera position and ensure camera always "points" toward the front
 	switch (key) {
 	case GLUT_KEY_LEFT:
@@ -530,6 +538,26 @@ void specKey(int key, int mouseX, int mouseY) {
 
 }
 
+// function to detect keys
+void keyboardKey(unsigned char key, int mouseX, int mouseY) {
+	switch (key) {
+	case '1':
+		groundTexture = Texture::GRASS;
+		break;
+	case '2':
+		groundTexture = Texture::FOREST;
+		break;
+	case '3':
+		groundTexture = Texture::SAND;
+		break;
+	case '4':
+		groundTexture = Texture::EARTH;
+		break;
+	default:
+		break;
+	}
+}
+
 // function to run main program
 int main(int argc, char** argv) {
 	glutInit(&argc, argv);
@@ -543,7 +571,8 @@ int main(int argc, char** argv) {
 
 	glutDisplayFunc(display);
 	glutIdleFunc(display);
-	glutSpecialFunc(specKey);
+	glutSpecialFunc(specialKey);
+	glutKeyboardFunc(keyboardKey);
 	glutTimerFunc(500, update, 0);
 	glutMainLoop();
 
