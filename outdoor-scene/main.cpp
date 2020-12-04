@@ -70,6 +70,8 @@ unsigned int groundTexture = 1;
 // other options variables
 int obj = 0;
 bool odd = false;
+bool showMenu = true;
+int curTextLoc, startTextLoc = 100;
 
 // --------------------------------------------------------------------------------
 // Function prototypes
@@ -83,6 +85,9 @@ void generateTerrain(float, float, float, float);
 void init(void);
 void drawGround(void);
 void drawWater(void);
+int textLoc(void);
+void drawText(int, int, char*);
+void drawMenu(void);
 void display(void);
 void update(int);
 void specialKey(int, int, int);
@@ -433,6 +438,33 @@ void drawWater(void) {
 	glDrawArrays(GL_QUADS, 0, 4);
 }
 
+// function to draw text
+void drawText(int x, int y, char* string) {
+	glRasterPos2d(x, y);
+	glColor3f(1.0, 1.0, 1.0);
+	glutBitmapString(GLUT_BITMAP_8_BY_13, (const unsigned char*)string);
+}
+
+// function to automatically calculate text location in menu
+int textLoc(void) {
+	return curTextLoc -= 20;
+}
+
+// function to draw help menu
+void drawMenu(void) {
+	glUseProgram(0);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(0.0, 1280.0, 0.0, 720.0);
+	curTextLoc = startTextLoc;
+	if (showMenu) {
+		drawText(30, textLoc(), (char*)" 1 2 3 4 : Change ground texture");
+		drawText(30, textLoc(), (char*)" ESC     : Exit");
+	}
+	drawText(30, 30, (char*)" SPACE   : Toggle Help Menu");
+	glUseProgram(program);
+}
+
 // function to display
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -448,6 +480,7 @@ void display(void) {
 	glUniform3fv(viewPosLoc, 1, glm::value_ptr(glm::vec3(camX, camY, camZ)));
 	drawWater();
 	drawGround();
+	drawMenu();
 	glutSwapBuffers();
 }
 
@@ -541,6 +574,13 @@ void specialKey(int key, int mouseX, int mouseY) {
 // function to detect keys
 void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 	switch (key) {
+	case 27:
+		// ESC character
+		exit(0);
+		break;
+	case ' ':
+		showMenu = !showMenu;
+		break;
 	case '1':
 		groundTexture = Texture::GRASS;
 		break;
