@@ -13,11 +13,11 @@
 #include "stb_image.h"
 
 // global constants
-#define WORLD_SIZE 65
+#define WORLD_SIZE 129
 #define MAX_HEIGHT 5.0
 #define ROUGHNESS 1.5
 #define VAO_SIZE 1
-#define VBO_SIZE 2
+#define VBO_SIZE 3
 
 #pragma warning(disable:4996)
 
@@ -43,10 +43,20 @@ struct terrain ground[VERTICES];
 // water
 // vertex coord X Y Z, normal vector X Y Z, texture coord S T)
 float water[] = {
-	-WORLD_SIZE / 2.0f, 0.0f, -WORLD_SIZE / 2.0f,	0.0f, 1.0f, 0.0f,	0.0f, 1.0f,
-	-WORLD_SIZE / 2.0f, 0.0f, +WORLD_SIZE / 2.0f,	0.0f, 1.0f, 0.0f,	0.0f, 0.0f,
-	+WORLD_SIZE / 2.0f, 0.0f, +WORLD_SIZE / 2.0f,	0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
-	+WORLD_SIZE / 2.0f, 0.0f, -WORLD_SIZE / 2.0f,	0.0f, 1.0f, 0.0f,	1.0f, 1.0f,
+	-WORLD_SIZE / 2.0f, 0.0f, -WORLD_SIZE / 2.0f,	0.0f, 1.0f, 0.0f,	0.0f, 0.0f,
+	-WORLD_SIZE / 2.0f, 0.0f, +WORLD_SIZE / 2.0f,	0.0f, 1.0f, 0.0f,	0.0f, 1.0f,
+	+WORLD_SIZE / 2.0f, 0.0f, +WORLD_SIZE / 2.0f,	0.0f, 1.0f, 0.0f,	1.0f, 1.0f,
+	+WORLD_SIZE / 2.0f, 0.0f, -WORLD_SIZE / 2.0f,	0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
+};
+
+// sky
+glm::vec3 skyColor = glm::vec3(3.0f, 3.0f, 3.0f);
+// vertex coord X Y Z, normal vector X Y Z
+float sky[] = {
+	-WORLD_SIZE, +WORLD_SIZE / 1.50, -WORLD_SIZE / 2,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,
+	-WORLD_SIZE, -WORLD_SIZE / 15.0, -WORLD_SIZE / 2,	0.0f, 0.0f, 1.0f,	0.0f, 1.0f,
+	+WORLD_SIZE, -WORLD_SIZE / 15.0, -WORLD_SIZE / 2,	0.0f, 0.0f, 1.0f,	1.0f, 1.0f,
+	+WORLD_SIZE, +WORLD_SIZE / 1.50, -WORLD_SIZE / 2,	0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
 };
 
 // predefined matrix type from GLM
@@ -63,7 +73,7 @@ GLfloat dirY = MAX_HEIGHT / 2.0f;
 GLfloat dirZ = 0.0f;
 
 // textures
-enum Texture { WATER, GRASS, FOREST, SAND, EARTH, TEXTURES };
+enum Texture { WATER, GRASS, FOREST, SAND, EARTH, SKY, TEXTURES };
 unsigned int textureID[TEXTURES];
 unsigned int groundTexture = 1;
 
@@ -83,8 +93,9 @@ float randomize(double);
 glm::vec3 calculateNormal(glm::vec3, glm::vec3, glm::vec3);
 void generateTerrain(float, float, float, float);
 void init(void);
-void drawGround(void);
 void drawWater(void);
+void drawGround(void);
+void drawSky(void);
 int textLoc(void);
 void drawText(int, int, char*);
 void drawMenu(void);
@@ -353,35 +364,44 @@ void init(void) {
 	glGenVertexArrays(VAO_SIZE, VAO);
 	glBindVertexArray(VAO[0]);
 
-	// terrain
 	glGenBuffers(VBO_SIZE, VBO);
+
+	// terrain
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(ground), ground, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(water), water, GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 
 	// water
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(water), water, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(ground), ground, GL_STATIC_DRAW);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-
 	glEnableVertexAttribArray(3);
 	glEnableVertexAttribArray(4);
 	glEnableVertexAttribArray(5);
+
+	//// sky
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(sky), sky, GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+	glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(8, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(6);
+	glEnableVertexAttribArray(7);
+	glEnableVertexAttribArray(8);
 
 	// program
 	program = loadShaders("vertexShader.glsl", "fragmentShader.glsl");
 	glUseProgram(program);
 
 	glEnable(GL_DEPTH_TEST);
-	glClearColor((GLclampf)0.33, (GLclampf)0.33, (GLclampf)0.33, (GLclampf)1.0);
+	glClearColor((GLclampf)0.3, (GLclampf)0.3, (GLclampf)0.3, (GLclampf)1.0);
 
 	// projection matrix (fov, aspect, near, far)
 	proj = glm::perspective(glm::radians(45.0f), 1.8f, 0.1f, 200.0f);
@@ -399,19 +419,36 @@ void init(void) {
 	char texGround2[50] = "textures/forest.jpg";
 	char texGround3[50] = "textures/sand.jpg";
 	char texGround4[50] = "textures/earth.jpg";
+	char texSky[50] = "textures/sky.jpg";
 	textureID[Texture::WATER] = loadTexture(Texture::WATER, texWater);
 	textureID[Texture::GRASS] = loadTexture(Texture::GRASS, texGround1);
 	textureID[Texture::FOREST] = loadTexture(Texture::FOREST, texGround2);
 	textureID[Texture::SAND] = loadTexture(Texture::SAND, texGround3);
 	textureID[Texture::EARTH] = loadTexture(Texture::EARTH, texGround4);
+	textureID[Texture::SKY] = loadTexture(Texture::SKY, texSky);
 	srand(0);
 	glutFullScreen();
+}
+
+// function to draw water
+void drawWater(void) {
+	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	obj = 1;
+	glUniform1i(objLoc, obj);
+
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.3, 0.3, 0.8)));
+
+	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
+	glUniform1i(ourTextureLoc, Texture::WATER);
+
+	glDrawArrays(GL_QUADS, 0, 4);
 }
 
 // function to draw ground
 void drawGround(void) {
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
-	obj = 1;
+	obj = 2;
 	glUniform1i(objLoc, obj);
 
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
@@ -423,17 +460,17 @@ void drawGround(void) {
 	glDrawArrays(GL_QUADS, 0, VERTICES);
 }
 
-// function to draw water
-void drawWater(void) {
+// function to draw sky
+void drawSky(void) {
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
-	obj = 2;
+	obj = 3;
 	glUniform1i(objLoc, obj);
 
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
-	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.3, 0.3, 0.8)));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(skyColor));
 
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
-	glUniform1i(ourTextureLoc, Texture::WATER);
+	glUniform1i(ourTextureLoc, Texture::SKY);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }
@@ -459,7 +496,7 @@ void drawMenu(void) {
 	curTextLoc = startTextLoc;
 	if (showMenu) {
 		drawText(30, textLoc(), (char*)" 1 2 3 4 : Change ground texture");
-		drawText(30, textLoc(), (char*)" ESC     : Exit");
+		drawText(30, textLoc(), (char*)" Q       : Exit");
 	}
 	drawText(30, 30, (char*)" SPACE   : Toggle Help Menu");
 	glUseProgram(program);
@@ -478,6 +515,7 @@ void display(void) {
 	// pass camera position to fragment shader for light calculation
 	unsigned int viewPosLoc = glGetUniformLocation(program, "viewPos");
 	glUniform3fv(viewPosLoc, 1, glm::value_ptr(glm::vec3(camX, camY, camZ)));
+	drawSky();
 	drawWater();
 	drawGround();
 	drawMenu();
@@ -508,6 +546,7 @@ void update(int _) {
 		water[31] = 1.0f;
 	}
 
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(water), water);
 	odd = !odd;
 
@@ -521,14 +560,14 @@ void specialKey(int key, int mouseX, int mouseY) {
 	// change camera position and ensure camera always "points" toward the front
 	switch (key) {
 	case GLUT_KEY_LEFT:
-		if (camX >= -WORLD_SIZE / 3.0f) {
+		if (camX >= -WORLD_SIZE / 10.0f) {
 			camX -= 0.5;
 			dirX -= 0.5;
 		}
 		break;
 
 	case GLUT_KEY_RIGHT:
-		if (camX <= WORLD_SIZE / 3.0f) {
+		if (camX <= WORLD_SIZE / 10.0f) {
 			camX += 0.5;
 			dirX += 0.5;
 		}
@@ -549,7 +588,7 @@ void specialKey(int key, int mouseX, int mouseY) {
 		break;
 
 	case GLUT_KEY_PAGE_UP:
-		if (camY <= 20.0) {
+		if (camY <= 10.0) {
 			camY += 0.5;
 			dirY += 0.5;
 		}
@@ -574,10 +613,6 @@ void specialKey(int key, int mouseX, int mouseY) {
 // function to detect keys
 void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 	switch (key) {
-	case 27:
-		// ESC character
-		exit(0);
-		break;
 	case ' ':
 		showMenu = !showMenu;
 		break;
@@ -592,6 +627,10 @@ void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 		break;
 	case '4':
 		groundTexture = Texture::EARTH;
+		break;
+	case 'q':
+	case 'Q':
+		exit(0);
 		break;
 	default:
 		break;

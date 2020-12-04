@@ -47,5 +47,5 @@ void main(void) {
 	fragColor = vec4(lighting * vColor, 1.0);
 	fragColor =
 		(textureFlag * texture(ourTexture, vTexCoord) * fragColor) +
-		((1.0f - textureFlag) * fragColor);
+		((1.0 - textureFlag) * fragColor);
 }
