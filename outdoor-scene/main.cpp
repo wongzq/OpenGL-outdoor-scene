@@ -84,8 +84,9 @@ unsigned int groundTexture = 1;
 // other options variables
 int obj = 0;
 int ripple = 0;
+bool antiAliasing = false;
 bool showMenu = true;
-int curTextLoc, startTextLoc = 100;
+int curTextLoc, startTextLoc = 120;
 
 // --------------------------------------------------------------------------------
 // Function prototypes
@@ -512,6 +513,11 @@ void drawMenu(void) {
 	curTextLoc = startTextLoc;
 	if (showMenu) {
 		drawText(30, textLoc(), (char*)" 1 2 3 4 : Change ground texture");
+
+		antiAliasing
+			? drawText(30, textLoc(), (char*)" A       : Anti-aliasing ON")
+			: drawText(30, textLoc(), (char*)" A       : Anti-aliasing OFF");
+
 		drawText(30, textLoc(), (char*)" Q       : Exit");
 	}
 	drawText(30, 30, (char*)" SPACE   : Toggle Help Menu");
@@ -522,6 +528,11 @@ void drawMenu(void) {
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glUseProgram(program);
+
+	// toggle full-scene anti-aliasing
+	antiAliasing ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
 
 	// view martrix - glm::lookAt(camera position, direction, up vector)
 	view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(dirX, dirY, dirZ), glm::vec3(0.0, 1.0, 0.0));
@@ -541,7 +552,7 @@ void display(void) {
 
 	// draw light
 	drawLight();
-	
+
 	// draw menu
 	drawMenu();
 
@@ -677,6 +688,10 @@ void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 		break;
 	case '4':
 		groundTexture = Texture::EARTH;
+		break;
+	case 'a':
+	case'A':
+		antiAliasing = !antiAliasing;
 		break;
 	case 'q':
 	case 'Q':
