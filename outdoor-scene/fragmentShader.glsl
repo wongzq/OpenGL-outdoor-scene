@@ -8,6 +8,7 @@ out vec4 fragColor;
 in vec3 vNormal;
 in vec3 vPos;
 in vec2 vTexCoord;
+in float textureFlag;
 
 struct Light {
 	vec3 direction;
@@ -44,5 +45,7 @@ void main(void) {
 	vec3 lighting = calcLightDir(light1, norm, viewDir);
 
 	fragColor = vec4(lighting * vColor, 1.0);
-	fragColor = texture(ourTexture, vTexCoord) * fragColor;
+	fragColor =
+		(textureFlag * texture(ourTexture, vTexCoord) * fragColor) +
+		((1.0f - textureFlag) * fragColor);
 }
