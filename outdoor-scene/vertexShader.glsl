@@ -42,7 +42,7 @@ void main() {
 		vPos = vec3(model * vec4(cPos, 1.0));
 		vNormal = vec3(model * vec4(cNormal, 0.0));
 		vTexCoord = cTexCoord;
-		textureFlag = 1.0f;
+		textureFlag = 1.0;
 		sunlightEffect = 0.25;
 	}
 

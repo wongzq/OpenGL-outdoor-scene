@@ -89,7 +89,9 @@ char curFPSstr[50] = "0.0";
 // other options variables
 int obj = 0;
 int ripple = 0;
-bool antiAliasing = false;
+bool useAntiAliasing = false;
+bool useFog = false;
+bool useTexture = true;
 bool showMenu = false;
 int curTextLoc, startTextLoc;
 
@@ -496,6 +498,10 @@ void drawLight(void) {
 	// pass light color to fragment shader for light calculation
 	unsigned int lightColorLoc = glGetUniformLocation(program, "sunlightColor");
 	glUniform3fv(lightColorLoc, 1, glm::value_ptr(sunlightColor));
+
+	// pass useTexture to fragment shader to determine usage of textures
+	unsigned int textureLoc = glGetUniformLocation(program, "useTexture");
+	glUniform1i(textureLoc, useTexture);
 }
 
 // function to draw text
@@ -517,7 +523,7 @@ void drawMenu(void) {
 	glLoadIdentity();
 	gluOrtho2D(0.0, 1280.0, 0.0, 720.0);
 
-	startTextLoc = 180;
+	startTextLoc = 220;
 	curTextLoc = startTextLoc;
 
 	sprintf(curFPSstr, "%.2f", curFPS);
@@ -530,9 +536,17 @@ void drawMenu(void) {
 		drawText(30, textLoc(), (char*)"PG UP / PG DN : Move camera Up, Down");
 		drawText(30, textLoc(), (char*)"1 2 3 4       : Change ground texture");
 		drawText(30, textLoc(), (char*)(
-			antiAliasing
+			useAntiAliasing
 			? "A             : Anti-aliasing is ON"
 			: "A             : Anti-aliasing is OFF"));
+		drawText(30, textLoc(), (char*)(
+			useTexture
+			? "T             : Texture is ON"
+			: "T             : Texture is OFF"));
+		drawText(30, textLoc(), (char*)(
+			useFog
+			? "F             : Fog is ON"
+			: "F             : Fog is OFF"));
 		drawText(30, textLoc(), (char*)"Q             : Quit");
 	}
 	drawText(30, 30, (char*)"H             : Help Menu");
@@ -549,7 +563,7 @@ void display(void) {
 	glUseProgram(program);
 
 	// toggle full-scene anti-aliasing
-	antiAliasing ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
+	useAntiAliasing ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
 
 	// view martrix - glm::lookAt(camera position, direction, up vector)
 	view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(dirX, dirY, dirZ), glm::vec3(0.0, 1.0, 0.0));
@@ -719,7 +733,15 @@ void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 
 	case 'a':
 	case 'A':
-		antiAliasing = !antiAliasing;
+		useAntiAliasing = !useAntiAliasing;
+		break;
+	case 't':
+	case 'T':
+		useTexture = !useTexture;
+		break;
+	case 'f':
+	case 'F':
+		useFog = !useFog;
 		break;
 	case 'q':
 	case 'Q':

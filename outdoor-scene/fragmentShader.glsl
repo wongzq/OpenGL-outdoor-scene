@@ -5,6 +5,8 @@ uniform vec3 viewPos;
 uniform sampler2D ourTexture;
 uniform vec3 sunlightPos;
 uniform vec3 sunlightColor;
+uniform int useTexture;
+uniform int useFog;
 
 out vec4 fragColor;
 in vec3 vNormal;
@@ -27,7 +29,7 @@ void main(void) {
 	vec3 sunlight = sunlightAmbient + sunlightDiffuse;
 
 	fragColor = attenuation * vec4(sunlight * vColor, 1.0);
-	fragColor =
-		(textureFlag * texture(ourTexture, vTexCoord) * fragColor) +
-		((1.0 - textureFlag) * fragColor);
+	fragColor = useTexture == 1
+		? (textureFlag * texture(ourTexture, vTexCoord) * fragColor) + ((1.0 - textureFlag) * fragColor)
+		: fragColor;
 }
