@@ -26,7 +26,8 @@
 // OpenGL variables
 enum Background { BG_WATER, BG_TERRAIN, BG_SKY, BG_LENGTH };
 
-const int VAO_SIZE = BG_LENGTH;
+const int VAO_SIZE = BG_LENGTH + 1;
+const int GLUT_OBJ = VAO_SIZE - 1;
 
 GLuint VAO[VAO_SIZE];
 GLuint VBO[VAO_SIZE];
@@ -98,7 +99,7 @@ float curFPS;
 char curFPSstr[50] = "0.0";
 
 // other options variables
-enum Object { OBJ_NULL, OBJ_GROUND, OBJ_SKY, OBJ_ITEM };
+enum Object { OBJ_NULL, OBJ_GROUND, OBJ_SKY, OBJ_GLUT };
 int obj = Object::OBJ_NULL;
 int ripple = 0;
 
@@ -429,6 +430,13 @@ void init(void) {
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 
+	// GLUT objects
+	glBindVertexArray(VAO[GLUT_OBJ]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[GLUT_OBJ]);
+	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_STATIC_DRAW);
+	glutSetVertexAttribCoord3(0);
+	glutSetVertexAttribNormal(1);
+
 	// program
 	program = loadShaders("vertexShader.glsl", "fragmentShader.glsl");
 	glUseProgram(program);
@@ -475,13 +483,11 @@ void drawWater(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_WATER]);
 
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 	obj = Object::OBJ_GROUND;
 	glUniform1i(objLoc, obj);
-
-	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.3, 0.3, 0.8)));
-
-	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 	glUniform1i(ourTextureLoc, Texture::TEX_WATER);
 
 	glDrawArrays(GL_QUADS, 0, 4);
@@ -493,13 +499,11 @@ void drawTerrain(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_TERRAIN]);
 
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 	obj = Object::OBJ_GROUND;
 	glUniform1i(objLoc, obj);
-
-	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.8, 0.8, 0.8)));
-
-	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 	glUniform1i(ourTextureLoc, groundTexture);
 
 	glDrawArrays(GL_QUADS, 0, VERTICES);
@@ -511,13 +515,11 @@ void drawSky(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_SKY]);
 
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 	obj = Object::OBJ_SKY;
 	glUniform1i(objLoc, obj);
-
-	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(skyColor));
-
-	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 	glUniform1i(ourTextureLoc, Texture::TEX_SKY);
 
 	glDrawArrays(GL_QUADS, 0, 4);
@@ -525,40 +527,43 @@ void drawSky(void) {
 
 // function to draw tree
 void drawTree(int x, int y, int z) {
-	//unsigned int objLoc = glGetUniformLocation(program, "obj");
-	//unsigned int modelLoc = glGetUniformLocation(program, "model");
-	//unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+	glBindVertexArray(VAO[GLUT_OBJ]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[GLUT_OBJ]);
 
-	//obj = Object::OBJ_ITEM;
-	//glUniform1i(objLoc, obj);
+	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int modelLoc = glGetUniformLocation(program, "model");
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 
-	//model = glm::mat4(1.0f);
-	//model = glm::translate(model, glm::vec3(x, y, z));
-	//model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
-	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	//glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.66, 0.55, 0.44)));
-	//glutSolidCylinder(0.33, 2.5, 50, 50);
+	obj = Object::OBJ_GLUT;
+	glUniform1i(objLoc, obj);
 
-	//model = glm::mat4(1.0f);
-	//model = glm::translate(model, glm::vec3(x, y, z));
-	//model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
-	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	//glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
-	//glutSolidCone(1.6, 1.5, 50, 50);
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(x, y, z));
+	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.66, 0.55, 0.44)));
+	glutSolidCylinder(0.33, 2.5, 50, 50);
 
-	//model = glm::mat4(1.0f);
-	//model = glm::translate(model, glm::vec3(x, y + 1.0f, z));
-	//model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
-	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	//glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
-	//glutSolidCone(1.4, 1.5, 50, 50);
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(x, y, z));
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	glutSolidCone(1.6, 1.5, 50, 50);
 
-	//model = glm::mat4(1.0f);
-	//model = glm::translate(model, glm::vec3(x, y + 2.0f, z));
-	//model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
-	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	//glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
-	//glutSolidCone(1.2, 1.5, 50, 50);
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(x, y + 1.0f, z));
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	glutSolidCone(1.4, 1.5, 50, 50);
+
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(x, y + 2.0f, z));
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	glutSolidCone(1.2, 1.5, 50, 50);
 }
 
 // function to draw duck
@@ -688,7 +693,7 @@ void display(void) {
 	const float yfInc = -WORLD_SIZE / 5.0f / 10.0f;
 	const float zInc = -WORLD_SIZE / 1.25f / 10.0f;
 
-	//drawTree(0, 0, 0);
+	//drawTree(0, 5.0, 0);
 
 	// draw animals
 
