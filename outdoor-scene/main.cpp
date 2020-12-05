@@ -79,7 +79,7 @@ GLfloat supermanDirX = 0.0f;
 GLfloat supermanDirY = 0.0f;
 GLfloat supermanDirZ = 0.0f;
 float supermanCircle = 0.0f;
-
+const float increment = 2 * 3.142 / 360.0f;
 
 // light
 glm::vec3 sunlightPos = { 0, WORLD_SIZE, 0 };
@@ -698,7 +698,6 @@ void updateFPS(int n) {
 // function to update Superman position
 void updateSuperman(int n) {
 	if (useSuperman) {
-		float increment = 2 * 3.142 / 360.0f;
 		supermanCircle += increment;
 
 		supermanCamX = (cos(supermanCircle) * WORLD_SIZE / 3.0f);
