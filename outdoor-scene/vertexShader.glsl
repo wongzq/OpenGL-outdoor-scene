@@ -31,11 +31,11 @@ void main() {
 	else if(obj == 2) {
 		textureFlag = 1.0;
 		vTexCoord = texCoord;
-		sunlightEffect = 0.25;
+		sunlightEffect = 0.2;
 	}
 	// GLUT objects
 	else if(obj == 3) {
 		textureFlag = 0.0;
-		sunlightEffect = 0.75;
+		sunlightEffect = 0.4;
 	}
 }

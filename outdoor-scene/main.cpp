@@ -65,7 +65,7 @@ float sky[] = {
 // trees
 const int NUM_OF_TREES = 10;
 const glm::vec3 treesCoord[NUM_OF_TREES] = {
-	glm::vec3(-30.0, +6.0, -10.0),
+	glm::vec3(-30.0, +5.0, -10.0),
 	glm::vec3(-25.0, +5.0, -15.0),
 	glm::vec3(-20.0, +5.0, -20.0),
 	glm::vec3(-15.0, +4.0, -25.0),
@@ -79,7 +79,7 @@ const glm::vec3 treesCoord[NUM_OF_TREES] = {
 
 // ducks
 const int NUM_OF_DUCKS = 2;
-const glm::vec3 ducksCoord[NUM_OF_DUCKS] = { 
+const glm::vec3 ducksCoord[NUM_OF_DUCKS] = {
 	glm::vec3(0, 0, 0),
 	glm::vec3(0, 0, 0),
 };
@@ -114,7 +114,7 @@ float supermanCircle = 0.0f;
 const float increment = 2 * 3.142 / 360.0f;
 
 // light
-glm::vec3 sunlightPos = { 0, WORLD_SIZE, 0 };
+glm::vec3 sunlightPos = { 0, WORLD_SIZE, WORLD_SIZE / 5.0f };
 glm::vec3 sunlightColor = { 1.0f, 1.0f, 1.0f };
 
 // textures
@@ -129,7 +129,7 @@ char curFPSstr[50] = "0.0";
 
 // other options variables
 enum Object { OBJ_NULL, OBJ_GROUND, OBJ_SKY, OBJ_GLUT };
-int obj = Object::OBJ_NULL;
+int object = Object::OBJ_NULL;
 int ripple = 0;
 
 bool useSuperman = false;
@@ -153,9 +153,9 @@ void init(void);
 void drawWater(void);
 void drawTerrain(void);
 void drawSky(void);
-void drawTree(int, int, int);
-void drawDuck(int, int, int, float);
-void drawGoat(int, int, int, float);
+void drawTree(float, float, float);
+void drawDuck(float, float, float, float);
+void drawGoat(float, float, float, float);
 int textLoc(void);
 void drawText(int, int, char*);
 void drawMenu(void);
@@ -510,8 +510,8 @@ void drawWater(void) {
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 
-	obj = Object::OBJ_GROUND;
-	glUniform1i(objLoc, obj);
+	object = Object::OBJ_GROUND;
+	glUniform1i(objLoc, object);
 
 	model = glm::mat4(1.0f);
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -531,8 +531,8 @@ void drawTerrain(void) {
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 
-	obj = Object::OBJ_GROUND;
-	glUniform1i(objLoc, obj);
+	object = Object::OBJ_GROUND;
+	glUniform1i(objLoc, object);
 
 	model = glm::mat4(1.0f);
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -552,8 +552,8 @@ void drawSky(void) {
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
 
-	obj = Object::OBJ_SKY;
-	glUniform1i(objLoc, obj);
+	object = Object::OBJ_SKY;
+	glUniform1i(objLoc, object);
 
 	model = glm::mat4(1.0f);
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -564,7 +564,10 @@ void drawSky(void) {
 }
 
 // function to draw tree
-void drawTree(int x, int y, int z) {
+void drawTree(float x, float y, float z) {
+	glm::vec3 treeColor = glm::vec3(0.1, 0.9, 0.2);
+	glm::vec3 woodColor = glm::vec3(0.7, 0.6, 0.5);
+
 	glBindVertexArray(VAO[GLUT_OBJ]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[GLUT_OBJ]);
 
@@ -572,45 +575,118 @@ void drawTree(int x, int y, int z) {
 	unsigned int modelLoc = glGetUniformLocation(program, "model");
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 
-	obj = Object::OBJ_GLUT;
-	glUniform1i(objLoc, obj);
+	object = Object::OBJ_GLUT;
+	glUniform1i(objLoc, object);
 
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(x, y, z));
 	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.66, 0.55, 0.44)));
-	glutSolidCylinder(0.33, 2.5, 50, 50);
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(woodColor));
+	glutSolidCylinder(0.3, 2.5, 50, 50);
 
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(x, y, z));
 	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(treeColor));
 	glutSolidCone(1.6, 1.5, 50, 50);
 
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(x, y + 1.0f, z));
 	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(treeColor));
 	glutSolidCone(1.4, 1.5, 50, 50);
 
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(x, y + 2.0f, z));
 	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(treeColor));
 	glutSolidCone(1.2, 1.5, 50, 50);
 }
 
 // function to draw duck
-void drawDuck(int x, int y, int z, float rotation) {
+void drawDuck(float x, float y, float z, float rotation) {
+	glm::vec3 bodyColor = glm::vec3(0.9, 1.0, 0.3);
+	glm::vec3 wingColor = glm::vec3(0.8, 0.9, 0.2);
+	glm::vec3 eyeColor = glm::vec3(0.0, 0.0, 0.0);
+	glm::vec3 beakColor = glm::vec3(0.5, 0.2, 0.0);
 
+	glBindVertexArray(VAO[GLUT_OBJ]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[GLUT_OBJ]);
+
+	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int modelLoc = glGetUniformLocation(program, "model");
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+
+	object = Object::OBJ_GLUT;
+	glUniform1i(objLoc, object);
+
+	// body
+	const GLfloat w1 = 2.0f;
+	const GLfloat h1 = 1.2f;
+	const GLfloat d1 = 1.2f;
+	model = glm::mat4(1.0f);
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
+	model = glm::translate(model, glm::vec3(x, y + h1 / 2, z));
+	model = glm::scale(model, glm::vec3(w1, h1, d1));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(bodyColor));
+	glutSolidCube(1.0);
+
+	// wings
+	const GLfloat w2 = 1.2f;
+	const GLfloat h2 = 0.6f;
+	const GLfloat d2 = 1.4f;
+	model = glm::mat4(1.0f);
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
+	model = glm::translate(model, glm::vec3(x, y + h1 / 2, z));
+	model = glm::scale(model, glm::vec3(w2, h2, d2));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(wingColor));
+	glutSolidCube(1.0);
+
+	// head
+	const GLfloat w3 = 1.0f;
+	const GLfloat h3 = 1.0f;
+	const GLfloat d3 = 1.0f;
+	model = glm::mat4(1.0f);
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
+	model = glm::translate(model, glm::vec3(x + w1 / 4, y + h1 + h3 / 4, z));
+	model = glm::scale(model, glm::vec3(w3, h3, d3));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(bodyColor));
+	glutSolidCube(1.0);
+
+	// eyes
+	const GLfloat w4 = 0.25f;
+	const GLfloat h4 = 0.25f;
+	const GLfloat d4 = 1.10f;
+	model = glm::mat4(1.0f);
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
+	model = glm::translate(model, glm::vec3(x + w1 / 3, y + h1 + h3 / 2, z));
+	model = glm::scale(model, glm::vec3(w4, h4, d4));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(eyeColor));
+	glutSolidCube(1.0);
+
+	// beak
+	const GLfloat w5 = 0.5f;
+	const GLfloat h5 = 0.2f;
+	const GLfloat d5 = 1.0f;
+	model = glm::mat4(1.0f);
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
+	model = glm::translate(model, glm::vec3(x + w1 / 1.75, y + h1 + h3 / 5, z));
+	model = glm::scale(model, glm::vec3(w5, h5, d5));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(beakColor));
+	glutSolidCube(1.0);
 }
 
 // function to draw goat
-void drawGoat(int x, int y, int z, float rotation) {
+void drawGoat(float x, float y, float z, float rotation) {
 
 }
 
@@ -679,18 +755,15 @@ void display(void) {
 	useAntiAliasing ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
 
 	// view martrix - glm::lookAt(camera position, direction, up vector)
-	if (useSuperman) {
-		view = glm::lookAt(
+	view = useSuperman
+		? glm::lookAt(
 			glm::vec3(supermanCamX, supermanCamY, supermanCamZ),
 			glm::vec3(supermanDirX, supermanDirY, supermanDirZ),
-			glm::vec3(0.0, 1.0, 0.0));
-	}
-	else {
-		view = glm::lookAt(
+			glm::vec3(0.0, 1.0, 0.0))
+		: glm::lookAt(
 			glm::vec3(camX, camY, camZ),
 			glm::vec3(dirX, dirY, dirZ),
 			glm::vec3(0.0, 1.0, 0.0));
-	}
 
 	// pass camera to fragment shader for light calculation
 	unsigned int viewLoc = glGetUniformLocation(program, "view");
@@ -722,17 +795,12 @@ void display(void) {
 	drawSky();
 
 	// draw trees
-	const float x = -WORLD_SIZE / 2.5f;
-	const float z = -WORLD_SIZE / 1.25f;
-	const float y = WORLD_SIZE / 5.0f;
-	const float xInc = -WORLD_SIZE / 2.5f / 10.0f;
-	const float yfInc = -WORLD_SIZE / 5.0f / 10.0f;
-	const float zInc = -WORLD_SIZE / 1.25f / 10.0f;
-
 	for (int i = 0; i < NUM_OF_TREES; i++)
 		drawTree(treesCoord[i][0], treesCoord[i][1], treesCoord[i][2]);
 
 	// draw animals
+	for (int i = 0; i < NUM_OF_DUCKS; i++)
+		drawDuck(0, 0, 0, 0);
 
 	// draw menu
 	drawMenu();

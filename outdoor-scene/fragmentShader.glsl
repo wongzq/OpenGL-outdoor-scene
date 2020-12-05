@@ -37,22 +37,27 @@ void main(void) {
 	// diffuse light component calculation
 	vec3 normal = normalize(vNormal);
 
-	// sun light
+	// sunlight ambient
 	vec3 sunlightAmbient = vec3(0.5, 0.5, 0.5);
+	
+	// sunlight diffuse
 	vec3 sunlightDirection  = normalize(sunlightPos - vPos);
 	float dist = distance(sunlightPos, vPos);
-	float attenuation = 10.0 / dist;
 	vec3 sunlightDiffuse = max(dot(normal, sunlightDirection), 0.0) * (sunlightColor * sunlightEffect);
 
+	// combined sunlight
 	vec3 sunlight = sunlightAmbient + sunlightDiffuse;
 
+	// final fragment color
+	float attenuation = 10.0 / dist;
 	fragColor = attenuation * vec4(sunlight * vColor, 1.0);
-	fragColor = useTexture
-		? (textureFlag * texture(ourTexture, vTexCoord) * fragColor) + ((1.0 - textureFlag) * fragColor)
+	fragColor = useTexture && textureFlag == 1.0
+		? texture(ourTexture, vTexCoord) * fragColor
 		: fragColor;
 
+	// fog
 	if (useFog) {
-	float fogDistance = length(viewSpace);
+		float fogDistance = length(viewSpace);
 		fragColor = mix(fragColor, fogColor, calculateFogFactor(fogDistance));
 	}
 }
