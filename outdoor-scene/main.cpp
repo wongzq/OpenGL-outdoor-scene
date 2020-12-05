@@ -79,14 +79,15 @@ const glm::vec3 treesCoord[NUM_OF_TREES] = {
 
 // ducks
 const int NUM_OF_DUCKS = 2;
-const glm::vec3 ducksCoord[NUM_OF_DUCKS] = {
-	glm::vec3(0, 0, 0),
-	glm::vec3(0, 0, 0),
+glm::vec4 ducksCoord[NUM_OF_DUCKS] = {
+	glm::vec4(WORLD_SIZE / 5, 0, 0, 0),
+	glm::vec4(0, 0, WORLD_SIZE / 5, 0),
 };
+int ducksDirection[NUM_OF_DUCKS] = { 1, 1 };
 
 // goats
 const int NUM_OF_GOATS = 2;
-const glm::vec3 goatsCoord[NUM_OF_GOATS] = {
+glm::vec3 goatsCoord[NUM_OF_GOATS] = {
 	glm::vec3(0, 0, 0),
 	glm::vec3(0, 0, 0),
 };
@@ -162,6 +163,7 @@ void drawMenu(void);
 void display(void);
 void update(int);
 void updateFPS(int);
+void updateAnimals(int);
 void updateSuperman(int);
 void specialKey(int, int, int);
 void keyboardKey(unsigned char, int, int);
@@ -629,8 +631,8 @@ void drawDuck(float x, float y, float z, float rotation) {
 	const GLfloat h1 = 1.2f;
 	const GLfloat d1 = 1.2f;
 	model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::translate(model, glm::vec3(x, y + h1 / 2, z));
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::scale(model, glm::vec3(w1, h1, d1));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(bodyColor));
@@ -641,8 +643,8 @@ void drawDuck(float x, float y, float z, float rotation) {
 	const GLfloat h2 = 0.6f;
 	const GLfloat d2 = 1.4f;
 	model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::translate(model, glm::vec3(x, y + h1 / 2, z));
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::scale(model, glm::vec3(w2, h2, d2));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(wingColor));
@@ -653,8 +655,8 @@ void drawDuck(float x, float y, float z, float rotation) {
 	const GLfloat h3 = 1.0f;
 	const GLfloat d3 = 1.0f;
 	model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::translate(model, glm::vec3(x + w1 / 4, y + h1 + h3 / 4, z));
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::scale(model, glm::vec3(w3, h3, d3));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(bodyColor));
@@ -665,8 +667,8 @@ void drawDuck(float x, float y, float z, float rotation) {
 	const GLfloat h4 = 0.25f;
 	const GLfloat d4 = 1.10f;
 	model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::translate(model, glm::vec3(x + w1 / 3, y + h1 + h3 / 2, z));
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::scale(model, glm::vec3(w4, h4, d4));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(eyeColor));
@@ -677,8 +679,8 @@ void drawDuck(float x, float y, float z, float rotation) {
 	const GLfloat h5 = 0.2f;
 	const GLfloat d5 = 1.0f;
 	model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::translate(model, glm::vec3(x + w1 / 1.75, y + h1 + h3 / 5, z));
+	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::scale(model, glm::vec3(w5, h5, d5));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(beakColor));
@@ -800,7 +802,10 @@ void display(void) {
 
 	// draw animals
 	for (int i = 0; i < NUM_OF_DUCKS; i++)
-		drawDuck(0, 0, 0, 0);
+		drawDuck(ducksCoord[i][0], ducksCoord[i][1], ducksCoord[i][2], ducksCoord[i][3]);
+
+	drawDuck(10, 0, 0, 0);
+	drawDuck(-10, 0, 5, 90);
 
 	// draw menu
 	drawMenu();
@@ -877,6 +882,21 @@ void updateFPS(int n) {
 		renderCounter = 0;
 	}
 	glutTimerFunc(5, updateFPS, 0);
+}
+
+// function to update animals
+void updateAnimals(int n) {
+	// change duck swim direction
+	for (int i = 0; i < NUM_OF_DUCKS; i++) {
+		ducksCoord[i][0] += ducksDirection[i] > 0
+			? +1.0f
+			: -1.0f;
+		ducksCoord[i][3] = ducksCoord[i][3] > 0 ? -5.0f : +5.0f;
+
+		if (ducksCoord[i][0] > WORLD_SIZE / 3 || ducksCoord[i][0] < 0)
+			ducksDirection[i] = ducksDirection[i] > 0 ? -1 : +1;
+	}
+	glutTimerFunc(400, updateAnimals, 0);
 }
 
 // function to update Superman position
@@ -1017,6 +1037,7 @@ int main(int argc, char** argv) {
 	// update render
 	glutTimerFunc(500, update, 0);
 	glutTimerFunc(5, updateFPS, 0);
+	glutTimerFunc(400, updateAnimals, 0);
 	glutTimerFunc(100, updateSuperman, 0);
 
 	glutMainLoop();
