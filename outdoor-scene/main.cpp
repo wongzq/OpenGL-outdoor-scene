@@ -83,14 +83,15 @@ glm::vec4 ducksCoord[NUM_OF_DUCKS] = {
 	glm::vec4(WORLD_SIZE / 5, 0, 0, 0),
 	glm::vec4(0, 0, WORLD_SIZE / 5, 0),
 };
-int ducksDirection[NUM_OF_DUCKS] = { 1, 1 };
+int ducksDirection[NUM_OF_DUCKS] = { 1 };
 
 // goats
 const int NUM_OF_GOATS = 2;
 glm::vec3 goatsCoord[NUM_OF_GOATS] = {
-	glm::vec3(0, 0, 0),
-	glm::vec3(0, 0, 0),
+	glm::vec3(-WORLD_SIZE / 3, 1.5f, -WORLD_SIZE / 10),
+	glm::vec3(-WORLD_SIZE / 4, 1.7f, +WORLD_SIZE / 10),
 };
+int goatsDirection[NUM_OF_GOATS] = { 1 };
 
 // predefined matrix type from GLM
 glm::mat4 model;
@@ -155,7 +156,7 @@ void drawWater(void);
 void drawTerrain(void);
 void drawSky(void);
 void drawTree(float, float, float);
-void drawDuck(float, float, float, float);
+void drawDuck(float, float, float, float, float);
 void drawGoat(float, float, float, float);
 int textLoc(void);
 void drawText(int, int, char*);
@@ -610,7 +611,7 @@ void drawTree(float x, float y, float z) {
 }
 
 // function to draw duck
-void drawDuck(float x, float y, float z, float rotation) {
+void drawDuck(float x, float y, float z, float rotation, float dir) {
 	glm::vec3 bodyColor = glm::vec3(0.9, 1.0, 0.3);
 	glm::vec3 wingColor = glm::vec3(0.8, 0.9, 0.2);
 	glm::vec3 eyeColor = glm::vec3(0.0, 0.0, 0.0);
@@ -655,7 +656,7 @@ void drawDuck(float x, float y, float z, float rotation) {
 	const GLfloat h3 = 1.0f;
 	const GLfloat d3 = 1.0f;
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(x + w1 / 4, y + h1 + h3 / 4, z));
+	model = glm::translate(model, glm::vec3(x + dir * (w1 / 4), y + h1 + h3 / 4, z));
 	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::scale(model, glm::vec3(w3, h3, d3));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -667,7 +668,7 @@ void drawDuck(float x, float y, float z, float rotation) {
 	const GLfloat h4 = 0.25f;
 	const GLfloat d4 = 1.10f;
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(x + w1 / 3, y + h1 + h3 / 2, z));
+	model = glm::translate(model, glm::vec3(x + dir * (w1 / 3), y + h1 + h3 / 2, z));
 	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::scale(model, glm::vec3(w4, h4, d4));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -679,7 +680,7 @@ void drawDuck(float x, float y, float z, float rotation) {
 	const GLfloat h5 = 0.2f;
 	const GLfloat d5 = 1.0f;
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(x + w1 / 1.75, y + h1 + h3 / 5, z));
+	model = glm::translate(model, glm::vec3(x + dir * (w1 / 1.75), y + h1 + h3 / 5, z));
 	model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0, 1.0, 0.0));
 	model = glm::scale(model, glm::vec3(w5, h5, d5));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -688,8 +689,85 @@ void drawDuck(float x, float y, float z, float rotation) {
 }
 
 // function to draw goat
-void drawGoat(float x, float y, float z, float rotation) {
+void drawGoat(float x, float y, float z, float dir) {
+	glm::vec3 furColor = glm::vec3(0.9, 0.9, 0.9);
+	glm::vec3 hornColor = glm::vec3(0.3, 0.3, 0.3);
+	glm::vec3 eyeColor = glm::vec3(0.0, 0.0, 0.0);
 
+	glBindVertexArray(VAO[GLUT_OBJ]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[GLUT_OBJ]);
+
+	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int modelLoc = glGetUniformLocation(program, "model");
+	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+
+	object = Object::OBJ_GLUT;
+	glUniform1i(objLoc, object);
+
+	// body
+	const GLfloat w1 = 3.0f;
+	const GLfloat h1 = 1.5f;
+	const GLfloat d1 = 1.5f;
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(x, y + h1, z));
+	model = glm::scale(model, glm::vec3(w1, h1, d1));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(furColor));
+	glutSolidCube(1.0);
+
+	// legs
+	for (int i = 0; i < 4; i++) {
+		const GLfloat w2 = 0.4f;
+		const GLfloat h2 = 0.8f;
+		const GLfloat d2 = 0.4f;
+		model = glm::mat4(1.0f);
+		if (i == 0) model = glm::translate(model, glm::vec3(x - 1.2, y + h2 / 2, z - 0.5));
+		if (i == 1) model = glm::translate(model, glm::vec3(x - 1.2, y + h2 / 2, z + 0.5));
+		if (i == 2) model = glm::translate(model, glm::vec3(x + 1.2, y + h2 / 2, z - 0.5));
+		if (i == 3) model = glm::translate(model, glm::vec3(x + 1.2, y + h2 / 2, z + 0.5));
+		model = glm::scale(model, glm::vec3(w2, h2, d2));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(vColorLoc, 1, glm::value_ptr(furColor));
+		glutSolidCube(1.0);
+	}
+
+	// head
+	const GLfloat w3 = 0.75f;
+	const GLfloat h3 = 1.25f;
+	const GLfloat d3 = 0.75f;
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(x + dir * (w1 / 2), y + h1 + h3 / 2, z));
+	model = glm::rotate(model, glm::radians(dir * 45.0f), glm::vec3(0.0, 0.0, 1.0));
+	model = glm::scale(model, glm::vec3(w3, h3, d3));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(furColor));
+	glutSolidCube(1.0);
+
+	// eyes
+	const GLfloat w4 = 0.15f;
+	const GLfloat h4 = 0.15f;
+	const GLfloat d4 = 0.80f;
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(x + dir * (w1 / 2.25), y + h1 + h3 / 1.25f, z));
+	model = glm::rotate(model, glm::radians(dir * 45.0f), glm::vec3(0.0, 0.0, 1.0));
+	model = glm::scale(model, glm::vec3(w4, h4, d4));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniform3fv(vColorLoc, 1, glm::value_ptr(eyeColor));
+	glutSolidCube(1.0);
+
+	// horns
+	const GLfloat w5 = 0.2f;
+	const GLfloat h5 = 0.8f;
+	const GLfloat d5 = 0.2f;
+	for (int i = 0; i < 2; i++) {
+		model = glm::mat4(1.0f);
+		if (i == 0) model = glm::translate(model, glm::vec3(x + dir * (w1 / 2.5), y + h1 + h3, z + 0.25f));
+		if (i == 1) model = glm::translate(model, glm::vec3(x + dir * (w1 / 2.5), y + h1 + h3, z - 0.25f));
+		model = glm::scale(model, glm::vec3(w5, h5, d5));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(vColorLoc, 1, glm::value_ptr(hornColor));
+		glutSolidCube(1.0);
+	}
 }
 
 // function to draw text
@@ -802,10 +880,9 @@ void display(void) {
 
 	// draw animals
 	for (int i = 0; i < NUM_OF_DUCKS; i++)
-		drawDuck(ducksCoord[i][0], ducksCoord[i][1], ducksCoord[i][2], ducksCoord[i][3]);
-
-	drawDuck(10, 0, 0, 0);
-	drawDuck(-10, 0, 5, 90);
+		drawDuck(ducksCoord[i][0], ducksCoord[i][1], ducksCoord[i][2], ducksCoord[i][3], ducksDirection[i]);
+	for (int i = 0; i < NUM_OF_GOATS; i++)
+		drawGoat(goatsCoord[i][0], goatsCoord[i][1], goatsCoord[i][2], goatsDirection[i]);
 
 	// draw menu
 	drawMenu();
@@ -896,6 +973,17 @@ void updateAnimals(int n) {
 		if (ducksCoord[i][0] > WORLD_SIZE / 3 || ducksCoord[i][0] < 0)
 			ducksDirection[i] = ducksDirection[i] > 0 ? -1 : +1;
 	}
+
+	// change goat walk direction
+	for (int i = 0; i < NUM_OF_DUCKS; i++) {
+		goatsCoord[i][0] += goatsDirection[i] > 0
+			? +1.0f
+			: -1.0f;
+
+		if (goatsCoord[i][0] > -WORLD_SIZE / 5 || goatsCoord[i][0] < -WORLD_SIZE / 3)
+			goatsDirection[i] = goatsDirection[i] > 0 ? -1 : +1;
+	}
+
 	glutTimerFunc(400, updateAnimals, 0);
 }
 
