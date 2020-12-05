@@ -803,8 +803,8 @@ void drawMenu(void) {
 		drawText(30, textLoc(), (char*)"1 2 3 4       : Change ground texture");
 		drawText(30, textLoc(), (char*)(
 			useSuperman
-			? "S             : Superman view is ON"
-			: "S             : Superman view is OFF"));
+			? "F2            : Superman view is ON"
+			: "F2            : Superman view is OFF"));
 		drawText(30, textLoc(), (char*)(
 			useAntiAliasing
 			? "A             : Anti-aliasing is ON"
@@ -1048,6 +1048,10 @@ void specialKey(int key, int mouseX, int mouseY) {
 		}
 		break;
 
+	case GLUT_KEY_F2:
+		useSuperman = !useSuperman;
+		break;
+
 	case GLUT_KEY_F4:
 		exit(0);
 
@@ -1073,10 +1077,6 @@ void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 		groundTexture = Texture::TEX_EARTH;
 		break;
 
-	case 's':
-	case 'S':
-		useSuperman = !useSuperman;
-		break;
 	case 'a':
 	case 'A':
 		useAntiAliasing = !useAntiAliasing;
@@ -1106,7 +1106,7 @@ void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 // function to run main program
 int main(int argc, char** argv) {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitWindowSize(1280, 720);
 	glutInitWindowPosition(0, 0);
 	glutCreateWindow("Outdoor Scene");
