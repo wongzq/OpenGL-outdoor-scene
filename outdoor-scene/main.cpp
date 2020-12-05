@@ -81,12 +81,17 @@ enum Texture { WATER, GRASS, FOREST, SAND, EARTH, SKY, TEXTURES };
 unsigned int textureID[TEXTURES];
 unsigned int groundTexture = 1;
 
+// frames-per-second (FPS)
+int counter = 0, s_time = 0, e_time = 0;
+float curFPS;
+char curFPSstr[50] = "0.0";
+
 // other options variables
 int obj = 0;
 int ripple = 0;
 bool antiAliasing = false;
 bool showMenu = true;
-int curTextLoc, startTextLoc = 120;
+int curTextLoc, startTextLoc;
 
 // --------------------------------------------------------------------------------
 // Function prototypes
@@ -107,6 +112,7 @@ void drawText(int, int, char*);
 void drawMenu(void);
 void display(void);
 void update(int);
+void updateFPS(int);
 void specialKey(int, int, int);
 void keyboardKey(unsigned char, int, int);
 int main(int, char**);
@@ -510,22 +516,31 @@ void drawMenu(void) {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluOrtho2D(0.0, 1280.0, 0.0, 720.0);
+
+	startTextLoc = 150;
 	curTextLoc = startTextLoc;
+
+	sprintf(curFPSstr, "%f", curFPS);
+
 	if (showMenu) {
 		drawText(30, textLoc(), (char*)" 1 2 3 4 : Change ground texture");
 
 		antiAliasing
-			? drawText(30, textLoc(), (char*)" A       : Anti-aliasing ON")
-			: drawText(30, textLoc(), (char*)" A       : Anti-aliasing OFF");
+			? drawText(30, textLoc(), (char*)" A       : Anti-aliasing is ON")
+			: drawText(30, textLoc(), (char*)" A       : Anti-aliasing is OFF");
 
 		drawText(30, textLoc(), (char*)" Q       : Exit");
 	}
-	drawText(30, 30, (char*)" SPACE   : Toggle Help Menu");
+	drawText(30, 60, (char*)" H       : Help Menu");
+	drawText(30, 30, (char*)" Current FPS: ");
+	drawText(150, 30, (char*)curFPSstr);
 	glUseProgram(program);
 }
 
 // function to display
 void display(void) {
+	counter++;
+
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -560,7 +575,7 @@ void display(void) {
 }
 
 // function to update
-void update(int _) {
+void update(int n) {
 	// alternate water texture coordinate to create the illusion of motion
 	if (ripple == 0) {
 		water[6] = 0.0f;
@@ -613,7 +628,20 @@ void update(int _) {
 	float newSunlightColor = 10.0f * ratio;
 	sunlightPos[0] = newSunlightX <= -WORLD_SIZE ? WORLD_SIZE : newSunlightX;
 	sunlightColor = glm::vec3(newSunlightColor, newSunlightColor, newSunlightColor);
+
 	glutTimerFunc(500, update, 0);
+}
+
+// function to calculate FPS
+void updateFPS(int n) {
+	s_time = glutGet(GLUT_ELAPSED_TIME);
+
+	if (s_time - e_time >= 1000) {
+		curFPS = counter * 1000.0f / (s_time - e_time);
+		e_time = s_time;
+		counter = 0;
+	}
+	glutTimerFunc(5, updateFPS, 0);
 }
 
 // function to detect special keys
@@ -674,9 +702,6 @@ void specialKey(int key, int mouseX, int mouseY) {
 // function to detect keys
 void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 	switch (key) {
-	case ' ':
-		showMenu = !showMenu;
-		break;
 	case '1':
 		groundTexture = Texture::GRASS;
 		break;
@@ -689,13 +714,18 @@ void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 	case '4':
 		groundTexture = Texture::EARTH;
 		break;
+
 	case 'a':
-	case'A':
+	case 'A':
 		antiAliasing = !antiAliasing;
 		break;
 	case 'q':
 	case 'Q':
 		exit(0);
+		break;
+	case 'h':
+	case 'H':
+		showMenu = !showMenu;
 		break;
 	default:
 		break;
@@ -718,6 +748,7 @@ int main(int argc, char** argv) {
 	glutSpecialFunc(specialKey);
 	glutKeyboardFunc(keyboardKey);
 	glutTimerFunc(500, update, 0);
+	glutTimerFunc(5, updateFPS, 0);
 	glutMainLoop();
 
 	return 0;
