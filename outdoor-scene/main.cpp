@@ -82,7 +82,7 @@ unsigned int textureID[TEXTURES];
 unsigned int groundTexture = 1;
 
 // frames-per-second (FPS)
-int counter = 0, s_time = 0, e_time = 0;
+int renderCounter = 0, s_time = 0, e_time = 0;
 float curFPS;
 char curFPSstr[50] = "0.0";
 
@@ -90,8 +90,8 @@ char curFPSstr[50] = "0.0";
 int obj = 0;
 int ripple = 0;
 bool useAntiAliasing = false;
-bool useFog = false;
 bool useTexture = true;
+bool useFog = false;
 bool showMenu = false;
 int curTextLoc, startTextLoc;
 
@@ -555,7 +555,7 @@ void drawMenu(void) {
 
 // function to display
 void display(void) {
-	counter++;
+	renderCounter++;
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -653,9 +653,9 @@ void updateFPS(int n) {
 	s_time = glutGet(GLUT_ELAPSED_TIME);
 
 	if (s_time - e_time >= 1000) {
-		curFPS = counter * 1000.0f / (s_time - e_time);
+		curFPS = renderCounter * 1000.0f / (s_time - e_time);
 		e_time = s_time;
-		counter = 0;
+		renderCounter = 0;
 	}
 	glutTimerFunc(5, updateFPS, 0);
 }
@@ -768,12 +768,18 @@ int main(int argc, char** argv) {
 
 	init();
 
+	// display
 	glutDisplayFunc(display);
 	glutIdleFunc(display);
+
+	// handle keyboard and special keys
 	glutSpecialFunc(specialKey);
 	glutKeyboardFunc(keyboardKey);
+	
+	// update render
 	glutTimerFunc(500, update, 0);
 	glutTimerFunc(5, updateFPS, 0);
+	
 	glutMainLoop();
 
 	return 0;
