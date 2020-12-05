@@ -72,6 +72,15 @@ GLfloat dirX = 0.0f;
 GLfloat dirY = MAX_HEIGHT / 2.0f;
 GLfloat dirZ = 0.0f;
 
+GLfloat supermanCamX = 0.0f;
+GLfloat supermanCamY = WORLD_SIZE / 2.5f;
+GLfloat supermanCamZ = 0.0f;
+GLfloat supermanDirX = 0.0f;
+GLfloat supermanDirY = 0.0f;
+GLfloat supermanDirZ = 0.0f;
+float supermanCircle = 0.0f;
+
+
 // light
 glm::vec3 sunlightPos = { 0, WORLD_SIZE, 0 };
 glm::vec3 sunlightColor = { 10.0f, 10.0f, 10.0f };
@@ -89,9 +98,12 @@ char curFPSstr[50] = "0.0";
 // other options variables
 int obj = 0;
 int ripple = 0;
+
+bool useSuperman = false;
 bool useAntiAliasing = false;
 bool useTexture = true;
 bool useFog = false;
+
 bool showMenu = false;
 int curTextLoc, startTextLoc;
 
@@ -114,6 +126,7 @@ void drawMenu(void);
 void display(void);
 void update(int);
 void updateFPS(int);
+void updateSuperman(int);
 void specialKey(int, int, int);
 void keyboardKey(unsigned char, int, int);
 int main(int, char**);
@@ -513,18 +526,22 @@ void drawMenu(void) {
 	glLoadIdentity();
 	gluOrtho2D(0.0, 1280.0, 0.0, 720.0);
 
-	startTextLoc = 220;
+	startTextLoc = 240;
 	curTextLoc = startTextLoc;
 
 	sprintf(curFPSstr, "%.2f", curFPS);
-	char curFPSstrDisplay[50] = "Current FPS   : ";
-	strcat(curFPSstrDisplay, curFPSstr);
+	char curFPSdisplay[50] = "Current FPS   : ";
+	strcat(curFPSdisplay, curFPSstr);
 
 	if (showMenu) {
-		drawText(30, textLoc(), (char*)curFPSstrDisplay);
+		drawText(30, textLoc(), (char*)curFPSdisplay);
 		drawText(30, textLoc(), (char*)"Arrow Key     : Move camera");
 		drawText(30, textLoc(), (char*)"PG UP / PG DN : Move camera Up, Down");
 		drawText(30, textLoc(), (char*)"1 2 3 4       : Change ground texture");
+		drawText(30, textLoc(), (char*)(
+			useSuperman
+			? "S             : Superman view is ON"
+			: "S             : Superman view is OFF"));
 		drawText(30, textLoc(), (char*)(
 			useAntiAliasing
 			? "A             : Anti-aliasing is ON"
@@ -553,13 +570,26 @@ void display(void) {
 	glUseProgram(program);
 
 	// toggle full-scene anti-aliasing
-	useAntiAliasing ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
+	useAntiAliasing == 1 ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
 
 	// Camera
 	// view martrix - glm::lookAt(camera position, direction, up vector)
-	view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(dirX, dirY, dirZ), glm::vec3(0.0, 1.0, 0.0));
-	unsigned int viewLoc = glGetUniformLocation(program, "view");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	if (useSuperman) {
+		view = glm::lookAt(
+			glm::vec3(supermanCamX, supermanCamY, supermanCamZ),
+			glm::vec3(supermanDirX, supermanDirY, supermanDirZ),
+			glm::vec3(0.0, 1.0, 0.0));
+		unsigned int viewLoc = glGetUniformLocation(program, "view");
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	}
+	else {
+		view = glm::lookAt(
+			glm::vec3(camX, camY, camZ),
+			glm::vec3(dirX, dirY, dirZ),
+			glm::vec3(0.0, 1.0, 0.0));
+		unsigned int viewLoc = glGetUniformLocation(program, "view");
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	}
 
 	// pass camera position to fragment shader for light calculation
 	unsigned int viewPosLoc = glGetUniformLocation(program, "viewPos");
@@ -577,7 +607,7 @@ void display(void) {
 	// pass useFog to fragment shader to determine usage of fog
 	unsigned int useFogLoc = glGetUniformLocation(program, "useFog");
 	glUniform1i(useFogLoc, useFog);
-	
+
 	// pass useTexture to fragment shader to determine usage of textures
 	unsigned int useTextureLoc = glGetUniformLocation(program, "useTexture");
 	glUniform1i(useTextureLoc, useTexture);
@@ -665,6 +695,22 @@ void updateFPS(int n) {
 	glutTimerFunc(5, updateFPS, 0);
 }
 
+// function to update Superman position
+void updateSuperman(int n) {
+	if (useSuperman) {
+		float increment = 2 * 3.142 / 360.0f;
+		supermanCircle += increment;
+
+		supermanCamX = (cos(supermanCircle) * WORLD_SIZE / 3.0f);
+		supermanDirX = (cos(supermanCircle) * WORLD_SIZE / 4.0f);
+
+		supermanCamZ = (sin(supermanCircle) * WORLD_SIZE / 3.0f);
+		supermanDirZ = (sin(supermanCircle) * WORLD_SIZE / 4.0f);
+	}
+
+	glutTimerFunc(100, updateSuperman, 0);
+}
+
 // function to detect special keys
 void specialKey(int key, int mouseX, int mouseY) {
 	// change camera position and ensure camera always "points" toward the front
@@ -736,6 +782,10 @@ void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 		groundTexture = Texture::EARTH;
 		break;
 
+	case 's':
+	case 'S':
+		useSuperman = !useSuperman;
+		break;
 	case 'a':
 	case 'A':
 		useAntiAliasing = !useAntiAliasing;
@@ -780,11 +830,12 @@ int main(int argc, char** argv) {
 	// handle keyboard and special keys
 	glutSpecialFunc(specialKey);
 	glutKeyboardFunc(keyboardKey);
-	
+
 	// update render
 	glutTimerFunc(500, update, 0);
 	glutTimerFunc(5, updateFPS, 0);
-	
+	glutTimerFunc(100, updateSuperman, 0);
+
 	glutMainLoop();
 
 	return 0;

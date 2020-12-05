@@ -22,13 +22,11 @@ in vec4 viewSpace;
 
 // global variables
 float fogDensity = 0.1f;
-vec4 fogColor = vec4(0.3, 0.3, 0.3, 1.0);
+vec4 fogColor = vec4(0.5, 0.5, 0.5, 0.5);
 
 // calculate fog factor of the fragment
 float calculateFogFactor(float fogDistance) {
 	float result = 0.0;
-//	float start = 6.0;
-//	float end = 15.0;
 	result = (fogDistance - fogStart) / (fogEnd - fogStart);
 
 	return clamp(result, 0.0, 1.0);
