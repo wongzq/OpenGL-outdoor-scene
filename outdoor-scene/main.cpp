@@ -62,6 +62,35 @@ float sky[] = {
 	+WORLD_SIZE, +WORLD_SIZE / 1.50f, -WORLD_SIZE / 2.0f,	0.0f, 0.0f, 1.0f,	1.0f, 0.0f,
 };
 
+// trees
+const int NUM_OF_TREES = 10;
+const glm::vec3 treesCoord[NUM_OF_TREES] = {
+	glm::vec3(-30.0, +6.0, -10.0),
+	glm::vec3(-25.0, +5.0, -15.0),
+	glm::vec3(-20.0, +5.0, -20.0),
+	glm::vec3(-15.0, +4.0, -25.0),
+	glm::vec3(-10.0, +3.0, -25.0),
+	glm::vec3(+10.0, +2.0, -25.0),
+	glm::vec3(+15.0, +3.0, -25.0),
+	glm::vec3(+20.0, +3.5, -20.0),
+	glm::vec3(+25.0, +3.5, -15.0),
+	glm::vec3(+30.0, +3.5, -10.0),
+};
+
+// ducks
+const int NUM_OF_DUCKS = 2;
+const glm::vec3 ducksCoord[NUM_OF_DUCKS] = { 
+	glm::vec3(0, 0, 0),
+	glm::vec3(0, 0, 0),
+};
+
+// goats
+const int NUM_OF_GOATS = 2;
+const glm::vec3 goatsCoord[NUM_OF_GOATS] = {
+	glm::vec3(0, 0, 0),
+	glm::vec3(0, 0, 0),
+};
+
 // predefined matrix type from GLM
 glm::mat4 model;
 glm::mat4 view;
@@ -397,7 +426,7 @@ void init(void) {
 	glGenVertexArrays(VAO_SIZE, VAO);
 	glGenBuffers(VAO_SIZE, VBO);
 
-	// terrain
+	// 0 - terrain
 	glBindVertexArray(VAO[Background::BG_WATER]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_WATER]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(water), water, GL_DYNAMIC_DRAW);
@@ -408,7 +437,7 @@ void init(void) {
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 
-	// water
+	// 1 - water
 	glBindVertexArray(VAO[Background::BG_TERRAIN]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_TERRAIN]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(ground), ground, GL_STATIC_DRAW);
@@ -419,7 +448,7 @@ void init(void) {
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 
-	// sky
+	// 2 - sky
 	glBindVertexArray(VAO[Background::BG_SKY]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_SKY]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(sky), sky, GL_DYNAMIC_DRAW);
@@ -430,10 +459,9 @@ void init(void) {
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 
-	// GLUT objects
+	// 3 - GLUT objects
 	glBindVertexArray(VAO[GLUT_OBJ]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[GLUT_OBJ]);
-	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_STATIC_DRAW);
 	glutSetVertexAttribCoord3(0);
 	glutSetVertexAttribNormal(1);
 
@@ -448,11 +476,6 @@ void init(void) {
 	proj = glm::perspective(glm::radians(45.0f), 1.8f, 0.1f, 200.0f);
 	unsigned int projLoc = glGetUniformLocation(program, "proj");
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
-
-	// model matrix
-	model = glm::mat4(1.0f);
-	unsigned int modelLoc = glGetUniformLocation(program, "model");
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	// fog
 	unsigned int fogStartLoc = glGetUniformLocation(program, "fogStart");
@@ -483,10 +506,15 @@ void drawWater(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_WATER]);
 
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int modelLoc = glGetUniformLocation(program, "model");
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
+
 	obj = Object::OBJ_GROUND;
 	glUniform1i(objLoc, obj);
+
+	model = glm::mat4(1.0f);
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.3, 0.3, 0.8)));
 	glUniform1i(ourTextureLoc, Texture::TEX_WATER);
 
@@ -499,10 +527,15 @@ void drawTerrain(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_TERRAIN]);
 
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int modelLoc = glGetUniformLocation(program, "model");
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
+
 	obj = Object::OBJ_GROUND;
 	glUniform1i(objLoc, obj);
+
+	model = glm::mat4(1.0f);
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.8, 0.8, 0.8)));
 	glUniform1i(ourTextureLoc, groundTexture);
 
@@ -515,10 +548,15 @@ void drawSky(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_SKY]);
 
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
+	unsigned int modelLoc = glGetUniformLocation(program, "model");
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
+
 	obj = Object::OBJ_SKY;
 	glUniform1i(objLoc, obj);
+
+	model = glm::mat4(1.0f);
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(skyColor));
 	glUniform1i(ourTextureLoc, Texture::TEX_SKY);
 
@@ -646,19 +684,17 @@ void display(void) {
 			glm::vec3(supermanCamX, supermanCamY, supermanCamZ),
 			glm::vec3(supermanDirX, supermanDirY, supermanDirZ),
 			glm::vec3(0.0, 1.0, 0.0));
-		// pass camera to fragment shader for light calculation
-		unsigned int viewLoc = glGetUniformLocation(program, "view");
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	}
 	else {
 		view = glm::lookAt(
 			glm::vec3(camX, camY, camZ),
 			glm::vec3(dirX, dirY, dirZ),
 			glm::vec3(0.0, 1.0, 0.0));
-		// pass camera to fragment shader for light calculation
-		unsigned int viewLoc = glGetUniformLocation(program, "view");
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	}
+
+	// pass camera to fragment shader for light calculation
+	unsigned int viewLoc = glGetUniformLocation(program, "view");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
 	// pass camera position to fragment shader for light calculation
 	unsigned int viewPosLoc = glGetUniformLocation(program, "viewPos");
@@ -693,7 +729,8 @@ void display(void) {
 	const float yfInc = -WORLD_SIZE / 5.0f / 10.0f;
 	const float zInc = -WORLD_SIZE / 1.25f / 10.0f;
 
-	//drawTree(0, 5.0, 0);
+	for (int i = 0; i < NUM_OF_TREES; i++)
+		drawTree(treesCoord[i][0], treesCoord[i][1], treesCoord[i][2]);
 
 	// draw animals
 

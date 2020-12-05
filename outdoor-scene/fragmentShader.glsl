@@ -38,7 +38,7 @@ void main(void) {
 	vec3 normal = normalize(vNormal);
 
 	// sun light
-	vec3 sunlightAmbient = vec3(0.3, 0.3, 0.3);
+	vec3 sunlightAmbient = vec3(0.5, 0.5, 0.5);
 	vec3 sunlightDirection  = normalize(sunlightPos - vPos);
 	float dist = distance(sunlightPos, vPos);
 	float attenuation = 10.0 / dist;

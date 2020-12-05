@@ -36,6 +36,6 @@ void main() {
 	// GLUT objects
 	else if(obj == 3) {
 		textureFlag = 0.0;
-		sunlightEffect = 1.0;
+		sunlightEffect = 0.75;
 	}
 }
