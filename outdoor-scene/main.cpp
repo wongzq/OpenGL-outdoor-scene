@@ -90,7 +90,7 @@ char curFPSstr[50] = "0.0";
 int obj = 0;
 int ripple = 0;
 bool antiAliasing = false;
-bool showMenu = true;
+bool showMenu = false;
 int curTextLoc, startTextLoc;
 
 // --------------------------------------------------------------------------------
@@ -517,23 +517,25 @@ void drawMenu(void) {
 	glLoadIdentity();
 	gluOrtho2D(0.0, 1280.0, 0.0, 720.0);
 
-	startTextLoc = 150;
+	startTextLoc = 180;
 	curTextLoc = startTextLoc;
 
-	sprintf(curFPSstr, "%f", curFPS);
+	sprintf(curFPSstr, "%.2f", curFPS);
+	char curFPSstrDisplay[50] = "Current FPS   : ";
+	strcat(curFPSstrDisplay, curFPSstr);
 
 	if (showMenu) {
-		drawText(30, textLoc(), (char*)" 1 2 3 4 : Change ground texture");
-
-		antiAliasing
-			? drawText(30, textLoc(), (char*)" A       : Anti-aliasing is ON")
-			: drawText(30, textLoc(), (char*)" A       : Anti-aliasing is OFF");
-
-		drawText(30, textLoc(), (char*)" Q       : Exit");
+		drawText(30, textLoc(), (char*)curFPSstrDisplay);
+		drawText(30, textLoc(), (char*)"Arrow Key     : Move camera");
+		drawText(30, textLoc(), (char*)"PG UP / PG DN : Move camera Up, Down");
+		drawText(30, textLoc(), (char*)"1 2 3 4       : Change ground texture");
+		drawText(30, textLoc(), (char*)(
+			antiAliasing
+			? "A             : Anti-aliasing is ON"
+			: "A             : Anti-aliasing is OFF"));
+		drawText(30, textLoc(), (char*)"Q             : Quit");
 	}
-	drawText(30, 60, (char*)" H       : Help Menu");
-	drawText(30, 30, (char*)" Current FPS: ");
-	drawText(150, 30, (char*)curFPSstr);
+	drawText(30, 30, (char*)"H             : Help Menu");
 	glUseProgram(program);
 }
 
@@ -727,6 +729,7 @@ void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 	case 'H':
 		showMenu = !showMenu;
 		break;
+
 	default:
 		break;
 	}
