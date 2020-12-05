@@ -14,6 +14,7 @@ out vec3 vPos;
 out vec2 vTexCoord;
 out float textureFlag;
 out float sunlightEffect;
+out vec4 viewSpace;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -28,6 +29,7 @@ void main() {
 		vTexCoord = aTexCoord;
 		textureFlag = 1.0;
 		sunlightEffect = 1.0;
+		viewSpace = view * model * vec4(aPos, 1.0);
 	}
 	else if(obj == 2) {
 		gl_Position = proj * view * model * vec4(bPos, 1.0);
@@ -36,6 +38,7 @@ void main() {
 		vTexCoord = bTexCoord;
 		textureFlag = 1.0;
 		sunlightEffect = 1.0;
+		viewSpace = view * model * vec4(bPos, 1.0);
 	}
 	else if(obj == 3) {
 		gl_Position = proj * view * model * vec4(cPos, 1.0);
@@ -44,6 +47,6 @@ void main() {
 		vTexCoord = cTexCoord;
 		textureFlag = 1.0;
 		sunlightEffect = 0.25;
+		viewSpace = view * model * vec4(cPos, 1.0);
 	}
-
 }

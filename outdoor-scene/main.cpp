@@ -108,7 +108,6 @@ void init(void);
 void drawWater(void);
 void drawGround(void);
 void drawSky(void);
-void drawLight(void);
 int textLoc(void);
 void drawText(int, int, char*);
 void drawMenu(void);
@@ -427,6 +426,12 @@ void init(void) {
 	unsigned int modelLoc = glGetUniformLocation(program, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
+	// fog
+	unsigned int fogStartLoc = glGetUniformLocation(program, "fogStart");
+	glUniform1f(fogStartLoc, WORLD_SIZE / 5.0f);
+	unsigned int fogEndLoc = glGetUniformLocation(program, "fogEnd");
+	glUniform1f(fogEndLoc, WORLD_SIZE / 1.5f);
+
 	// texture
 	char texWater[50] = "textures/water.jpg";
 	char texGround1[50] = "textures/grass.jpg";
@@ -487,21 +492,6 @@ void drawSky(void) {
 	glUniform1i(ourTextureLoc, Texture::SKY);
 
 	glDrawArrays(GL_QUADS, 0, 4);
-}
-
-// function to draw light
-void drawLight(void) {
-	// pass light position vector to fragment shader for light calculation
-	unsigned int lightPosLoc = glGetUniformLocation(program, "sunlightPos");
-	glUniform3fv(lightPosLoc, 1, glm::value_ptr(sunlightPos));
-
-	// pass light color to fragment shader for light calculation
-	unsigned int lightColorLoc = glGetUniformLocation(program, "sunlightColor");
-	glUniform3fv(lightColorLoc, 1, glm::value_ptr(sunlightColor));
-
-	// pass useTexture to fragment shader to determine usage of textures
-	unsigned int textureLoc = glGetUniformLocation(program, "useTexture");
-	glUniform1i(textureLoc, useTexture);
 }
 
 // function to draw text
@@ -565,6 +555,7 @@ void display(void) {
 	// toggle full-scene anti-aliasing
 	useAntiAliasing ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
 
+	// Camera
 	// view martrix - glm::lookAt(camera position, direction, up vector)
 	view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(dirX, dirY, dirZ), glm::vec3(0.0, 1.0, 0.0));
 	unsigned int viewLoc = glGetUniformLocation(program, "view");
@@ -574,15 +565,29 @@ void display(void) {
 	unsigned int viewPosLoc = glGetUniformLocation(program, "viewPos");
 	glUniform3fv(viewPosLoc, 1, glm::value_ptr(glm::vec3(camX, camY, camZ)));
 
+	// Lighting
+	// pass light position vector to fragment shader for light calculation
+	unsigned int lightPosLoc = glGetUniformLocation(program, "sunlightPos");
+	glUniform3fv(lightPosLoc, 1, glm::value_ptr(sunlightPos));
+
+	// pass light color to fragment shader for light calculation
+	unsigned int lightColorLoc = glGetUniformLocation(program, "sunlightColor");
+	glUniform3fv(lightColorLoc, 1, glm::value_ptr(sunlightColor));
+
+	// pass useFog to fragment shader to determine usage of fog
+	unsigned int useFogLoc = glGetUniformLocation(program, "useFog");
+	glUniform1i(useFogLoc, useFog);
+	
+	// pass useTexture to fragment shader to determine usage of textures
+	unsigned int useTextureLoc = glGetUniformLocation(program, "useTexture");
+	glUniform1i(useTextureLoc, useTexture);
+
 	// draw background
-	drawSky();
 	drawWater();
 	drawGround();
+	drawSky();
 
 	// draw animals
-
-	// draw light
-	drawLight();
 
 	// draw menu
 	drawMenu();
