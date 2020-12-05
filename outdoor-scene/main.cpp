@@ -16,7 +16,6 @@
 #define WORLD_SIZE 65
 #define MAX_HEIGHT 5.0
 #define ROUGHNESS 1.5
-#define VAO_SIZE 1
 
 #pragma warning(disable:4996)
 
@@ -25,9 +24,12 @@
 // --------------------------------------------------------------------------------
 
 // OpenGL variables
-enum Object { VBO_WATER, VBO_TERRAIN, VBO_SKY, VBO_SIZE };
+enum Background { BG_WATER, BG_TERRAIN, BG_SKY, BG_LENGTH };
+
+const int VAO_SIZE = BG_LENGTH;
+
 GLuint VAO[VAO_SIZE];
-GLuint VBO[VBO_SIZE];
+GLuint VBO[VAO_SIZE];
 GLuint program;
 
 // terrain
@@ -83,10 +85,10 @@ const float increment = 2 * 3.142 / 360.0f;
 
 // light
 glm::vec3 sunlightPos = { 0, WORLD_SIZE, 0 };
-glm::vec3 sunlightColor = { 10.0f, 10.0f, 10.0f };
+glm::vec3 sunlightColor = { 1.0f, 1.0f, 1.0f };
 
 // textures
-enum Texture { WATER, GRASS, FOREST, SAND, EARTH, SKY, TEXTURES };
+enum Texture { TEX_WATER, TEX_GRASS, TEX_FOREST, TEX_SAND, TEX_EARTH, TEX_SKY, TEXTURES };
 unsigned int textureID[TEXTURES];
 unsigned int groundTexture = 1;
 
@@ -96,7 +98,8 @@ float curFPS;
 char curFPSstr[50] = "0.0";
 
 // other options variables
-int obj = 0;
+enum Object { OBJ_NULL, OBJ_GROUND, OBJ_SKY, OBJ_ITEM };
+int obj = Object::OBJ_NULL;
 int ripple = 0;
 
 bool useSuperman = false;
@@ -118,8 +121,11 @@ glm::vec3 calculateNormal(glm::vec3, glm::vec3, glm::vec3);
 void generateTerrain(float, float, float, float);
 void init(void);
 void drawWater(void);
-void drawGround(void);
+void drawTerrain(void);
 void drawSky(void);
+void drawTree(int, int, int);
+void drawDuck(int, int, int, float);
+void drawGoat(int, int, int, float);
 int textLoc(void);
 void drawText(int, int, char*);
 void drawMenu(void);
@@ -388,12 +394,11 @@ void init(void) {
 	generateTerrain(5.0f, 1.0f, -5.0f, 5.0f);
 
 	glGenVertexArrays(VAO_SIZE, VAO);
-	glBindVertexArray(VAO[0]);
-
-	glGenBuffers(VBO_SIZE, VBO);
+	glGenBuffers(VAO_SIZE, VBO);
 
 	// terrain
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_WATER]);
+	glBindVertexArray(VAO[Background::BG_WATER]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_WATER]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(water), water, GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -403,24 +408,26 @@ void init(void) {
 	glEnableVertexAttribArray(2);
 
 	// water
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_TERRAIN]);
+	glBindVertexArray(VAO[Background::BG_TERRAIN]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_TERRAIN]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(ground), ground, GL_STATIC_DRAW);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(3);
-	glEnableVertexAttribArray(4);
-	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 
-	//// sky
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_SKY]);
+	// sky
+	glBindVertexArray(VAO[Background::BG_SKY]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_SKY]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(sky), sky, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
-	glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glVertexAttribPointer(8, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(6);
-	glEnableVertexAttribArray(7);
-	glEnableVertexAttribArray(8);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 
 	// program
 	program = loadShaders("vertexShader.glsl", "fragmentShader.glsl");
@@ -452,35 +459,41 @@ void init(void) {
 	char texGround3[50] = "textures/sand.jpg";
 	char texGround4[50] = "textures/earth.jpg";
 	char texSky[50] = "textures/sky.jpg";
-	textureID[Texture::WATER] = loadTexture(Texture::WATER, texWater);
-	textureID[Texture::GRASS] = loadTexture(Texture::GRASS, texGround1);
-	textureID[Texture::FOREST] = loadTexture(Texture::FOREST, texGround2);
-	textureID[Texture::SAND] = loadTexture(Texture::SAND, texGround3);
-	textureID[Texture::EARTH] = loadTexture(Texture::EARTH, texGround4);
-	textureID[Texture::SKY] = loadTexture(Texture::SKY, texSky);
+	textureID[Texture::TEX_WATER] = loadTexture(Texture::TEX_WATER, texWater);
+	textureID[Texture::TEX_GRASS] = loadTexture(Texture::TEX_GRASS, texGround1);
+	textureID[Texture::TEX_FOREST] = loadTexture(Texture::TEX_FOREST, texGround2);
+	textureID[Texture::TEX_SAND] = loadTexture(Texture::TEX_SAND, texGround3);
+	textureID[Texture::TEX_EARTH] = loadTexture(Texture::TEX_EARTH, texGround4);
+	textureID[Texture::TEX_SKY] = loadTexture(Texture::TEX_SKY, texSky);
 
 	glutFullScreen();
 }
 
 // function to draw water
 void drawWater(void) {
+	glBindVertexArray(VAO[Background::BG_WATER]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_WATER]);
+
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
-	obj = 1;
+	obj = Object::OBJ_GROUND;
 	glUniform1i(objLoc, obj);
 
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.3, 0.3, 0.8)));
 
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
-	glUniform1i(ourTextureLoc, Texture::WATER);
+	glUniform1i(ourTextureLoc, Texture::TEX_WATER);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }
 
-// function to draw ground
-void drawGround(void) {
+// function to draw terrain
+void drawTerrain(void) {
+	glBindVertexArray(VAO[Background::BG_TERRAIN]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_TERRAIN]);
+
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
-	obj = 2;
+	obj = Object::OBJ_GROUND;
 	glUniform1i(objLoc, obj);
 
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
@@ -494,17 +507,68 @@ void drawGround(void) {
 
 // function to draw sky
 void drawSky(void) {
+	glBindVertexArray(VAO[Background::BG_SKY]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_SKY]);
+
 	unsigned int objLoc = glGetUniformLocation(program, "obj");
-	obj = 3;
+	obj = Object::OBJ_SKY;
 	glUniform1i(objLoc, obj);
 
 	unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
 	glUniform3fv(vColorLoc, 1, glm::value_ptr(skyColor));
 
 	unsigned int ourTextureLoc = glGetUniformLocation(program, "ourTexture");
-	glUniform1i(ourTextureLoc, Texture::SKY);
+	glUniform1i(ourTextureLoc, Texture::TEX_SKY);
 
 	glDrawArrays(GL_QUADS, 0, 4);
+}
+
+// function to draw tree
+void drawTree(int x, int y, int z) {
+	//unsigned int objLoc = glGetUniformLocation(program, "obj");
+	//unsigned int modelLoc = glGetUniformLocation(program, "model");
+	//unsigned int vColorLoc = glGetUniformLocation(program, "vColor");
+
+	//obj = Object::OBJ_ITEM;
+	//glUniform1i(objLoc, obj);
+
+	//model = glm::mat4(1.0f);
+	//model = glm::translate(model, glm::vec3(x, y, z));
+	//model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
+	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	//glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.66, 0.55, 0.44)));
+	//glutSolidCylinder(0.33, 2.5, 50, 50);
+
+	//model = glm::mat4(1.0f);
+	//model = glm::translate(model, glm::vec3(x, y, z));
+	//model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	//glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	//glutSolidCone(1.6, 1.5, 50, 50);
+
+	//model = glm::mat4(1.0f);
+	//model = glm::translate(model, glm::vec3(x, y + 1.0f, z));
+	//model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	//glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	//glutSolidCone(1.4, 1.5, 50, 50);
+
+	//model = glm::mat4(1.0f);
+	//model = glm::translate(model, glm::vec3(x, y + 2.0f, z));
+	//model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+	//glUniform3fv(vColorLoc, 1, glm::value_ptr(glm::vec3(0.1, 0.9, 0.2)));
+	//glutSolidCone(1.2, 1.5, 50, 50);
+}
+
+// function to draw duck
+void drawDuck(int x, int y, int z, float rotation) {
+
+}
+
+// function to draw goat
+void drawGoat(int x, int y, int z, float rotation) {
+
 }
 
 // function to draw text
@@ -564,21 +628,20 @@ void drawMenu(void) {
 void display(void) {
 	renderCounter++;
 
+	glUseProgram(program);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	glUseProgram(program);
-
 	// toggle full-scene anti-aliasing
-	useAntiAliasing == 1 ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
+	useAntiAliasing ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
 
-	// Camera
 	// view martrix - glm::lookAt(camera position, direction, up vector)
 	if (useSuperman) {
 		view = glm::lookAt(
 			glm::vec3(supermanCamX, supermanCamY, supermanCamZ),
 			glm::vec3(supermanDirX, supermanDirY, supermanDirZ),
 			glm::vec3(0.0, 1.0, 0.0));
+		// pass camera to fragment shader for light calculation
 		unsigned int viewLoc = glGetUniformLocation(program, "view");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	}
@@ -587,6 +650,7 @@ void display(void) {
 			glm::vec3(camX, camY, camZ),
 			glm::vec3(dirX, dirY, dirZ),
 			glm::vec3(0.0, 1.0, 0.0));
+		// pass camera to fragment shader for light calculation
 		unsigned int viewLoc = glGetUniformLocation(program, "view");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	}
@@ -595,7 +659,6 @@ void display(void) {
 	unsigned int viewPosLoc = glGetUniformLocation(program, "viewPos");
 	glUniform3fv(viewPosLoc, 1, glm::value_ptr(glm::vec3(camX, camY, camZ)));
 
-	// Lighting
 	// pass light position vector to fragment shader for light calculation
 	unsigned int lightPosLoc = glGetUniformLocation(program, "sunlightPos");
 	glUniform3fv(lightPosLoc, 1, glm::value_ptr(sunlightPos));
@@ -614,8 +677,18 @@ void display(void) {
 
 	// draw background
 	drawWater();
-	drawGround();
+	drawTerrain();
 	drawSky();
+
+	// draw trees
+	const float x = -WORLD_SIZE / 2.5f;
+	const float z = -WORLD_SIZE / 1.25f;
+	const float y = WORLD_SIZE / 5.0f;
+	const float xInc = -WORLD_SIZE / 2.5f / 10.0f;
+	const float yfInc = -WORLD_SIZE / 5.0f / 10.0f;
+	const float zInc = -WORLD_SIZE / 1.25f / 10.0f;
+
+	//drawTree(0, 0, 0);
 
 	// draw animals
 
@@ -669,7 +742,8 @@ void update(int n) {
 		water[31] = 0.0f;
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[Object::VBO_WATER]);
+	glBindVertexArray(VAO[Background::BG_WATER]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[Background::BG_WATER]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(water), water);
 	ripple = (++ripple) % 4;
 
@@ -769,16 +843,16 @@ void specialKey(int key, int mouseX, int mouseY) {
 void keyboardKey(unsigned char key, int mouseX, int mouseY) {
 	switch (key) {
 	case '1':
-		groundTexture = Texture::GRASS;
+		groundTexture = Texture::TEX_GRASS;
 		break;
 	case '2':
-		groundTexture = Texture::FOREST;
+		groundTexture = Texture::TEX_FOREST;
 		break;
 	case '3':
-		groundTexture = Texture::SAND;
+		groundTexture = Texture::TEX_SAND;
 		break;
 	case '4':
-		groundTexture = Texture::EARTH;
+		groundTexture = Texture::TEX_EARTH;
 		break;
 
 	case 's':
